@@ -6,5 +6,5 @@ Just select a GameObject or any asset in the Project window, right click > View 
 Once the window is opened, you can navigate between dependencies by clicking on the little arrow on each node.
 
 # Screenshots
-![Access menu](/Medias~/Screenshot01.jpg)
-![Dependency Graph Viewer](/Medias~/Screenshot02.jpg)
+![Access menu](Medias~/Screenshot01.jpg)
+![Dependency Graph Viewer](Medias~/Screenshot02.jpg)
