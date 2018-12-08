@@ -6,41 +6,54 @@ using System;
 
 internal class DependencyViewerSettingsOverlay
 {
-    private static readonly Rect OverlayRect = new Rect(10, 10, 200, 100);
+    private static readonly Rect OverlayRect = new Rect(10, 10, 300, 80);
 
     internal event Action onSettingsChanged;
 
     private DependencyViewerSettings _settings;
     private SerializedObject _settingsSO;
 
+    private bool _isExpanded;
 
     public DependencyViewerSettingsOverlay(DependencyViewerSettings settings)
     {
         _settings = settings;
         _settingsSO = new SerializedObject(_settings);
+        _isExpanded = false;
     }
 
     public void Draw()
     {
-        GUILayout.BeginArea(OverlayRect, EditorStyles.helpBox);
+        Rect currentOverlayRect = OverlayRect;
+        if (!_isExpanded)
         {
-            _settingsSO.Update();
+            currentOverlayRect.height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing * 2;
+        }
 
-            SerializedProperty sp = _settingsSO.GetIterator();
+        GUILayout.BeginArea(currentOverlayRect, EditorStyles.helpBox);
+        {
+            _isExpanded = EditorGUILayout.Foldout(_isExpanded, "Settings");
 
-            sp.NextVisible(true); // Skip script property
-
-            EditorGUI.BeginChangeCheck();
+            if (_isExpanded)
             {
-                while (sp.NextVisible(true))
+                _settingsSO.Update();
+
+                SerializedProperty sp = _settingsSO.GetIterator();
+
+                sp.NextVisible(true); // Skip script property
+
+                EditorGUI.BeginChangeCheck();
                 {
-                    EditorGUILayout.PropertyField(sp, true);
+                    while (sp.NextVisible(true))
+                    {
+                        EditorGUILayout.PropertyField(sp, true);
+                    }
+                    _settingsSO.ApplyModifiedProperties();
                 }
-                _settingsSO.ApplyModifiedProperties();
-            }
-            if (EditorGUI.EndChangeCheck() && onSettingsChanged != null)
-            {
-                onSettingsChanged();
+                if (EditorGUI.EndChangeCheck() && onSettingsChanged != null)
+                {
+                    onSettingsChanged();
+                }
             }
         }
         GUILayout.EndArea();

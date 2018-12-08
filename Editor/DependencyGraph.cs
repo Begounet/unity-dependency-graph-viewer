@@ -16,8 +16,7 @@ internal class DependencyViewerGraph
 
     public void CreateReferenceTargetNode(UnityEngine.Object refTarget)
     {
-        _refTargetNode = new DependencyViewerNode();
-        _refTargetNode.TargetObject = refTarget;
+        _refTargetNode = new DependencyViewerNode(refTarget);
     }
     
     public void RearrangeNodesLayout()

@@ -18,6 +18,7 @@ public class DependencyViewer : EditorWindow
     private DependencyViewerGraph _graph;
     private DependencyViewerGraphDrawer _graphDrawer;
     private DependencyViewerSettingsOverlay _settingsOverlay;
+    private DependencyResolver _resolver;
 
     private bool _readyToDrag;
     private bool _isDragging;
@@ -49,6 +50,7 @@ public class DependencyViewer : EditorWindow
         _graphDrawer = new DependencyViewerGraphDrawer(_graph);
         _settings = DependencyViewerSettings.Create();
         _settingsOverlay = new DependencyViewerSettingsOverlay(_settings);
+        _resolver = new DependencyResolver(_graph, _settings);
 
         _graphDrawer.requestViewDependency += ViewDependencies;
         _settingsOverlay.onSettingsChanged += OnSettingsChanged;
@@ -67,87 +69,10 @@ public class DependencyViewer : EditorWindow
     public void BuildGraph()
     {
         _graph.CreateReferenceTargetNode(refTarget);
-
-        if (_settings.ShouldSearchInCurrentScene)
-        {
-            bool visitChildren = true;
-            List<Scene> currentOpenedScenes = DependencyViewerUtility.GetCurrentOpenedScenes();
-            if (_settings.DisplayReferences)
-            {
-                DependencyViewerUtility.ForeachGameObjectInScenes(currentOpenedScenes, 
-                    visitChildren, (go) => FindReferenceInGameObject(_graph.RefTargetNode, go));
-            }
-        }
-
-        if (_settings.DisplayDependencies)
-        {
-            FindDependencies(_graph.RefTargetNode);
-        }
-
+        _resolver.BuildGraph();
         _graph.RearrangeNodesLayout();
-
         CenterViewerOnGraph();
     }
-
-    private void FindReferenceInGameObject(DependencyViewerNode node, GameObject rootGameObject, int depth = 1)
-    {
-        Component[] components = rootGameObject.GetComponents<MonoBehaviour>();
-        for (int componentsIdx = 0; componentsIdx < components.Length; ++componentsIdx)
-        {
-            Component component = components[componentsIdx];
-            SerializedObject so = new SerializedObject(component);
-            SerializedProperty sp = so.GetIterator();
-            while (sp.NextVisible(true))
-            {
-                if (sp.propertyType == SerializedPropertyType.ObjectReference && sp.objectReferenceValue == node.TargetObject)
-                {
-                    // Reference found!
-                    DependencyViewerNode reference = new DependencyViewerNode()
-                    {
-                        TargetObject = component
-                    };
-
-                    DependencyViewerGraph.CreateNodeLink(reference, node);
-                }
-            }
-        }
-    }
-
-    private void FindDependencies(DependencyViewerNode node, int depth = 1)
-    {
-        if (node.TargetObject is GameObject)
-        {
-            GameObject targetGameObject = node.TargetObject as GameObject;
-            Component[] components = targetGameObject.GetComponents<Component>();
-            for (int i = 0; i < components.Length; ++i)
-            {
-                FindDependencies(node, components[i], depth);
-            }
-        }
-        else
-        {
-            FindDependencies(node, node.TargetObject, depth);
-        }
-    }
-
-    private void FindDependencies(DependencyViewerNode node, UnityEngine.Object obj, int depth = 1)
-    {
-        SerializedObject targetObjectSO = new SerializedObject(obj);
-        SerializedProperty sp = targetObjectSO.GetIterator();
-        while (sp.NextVisible(true))
-        {
-            if (sp.propertyType == SerializedPropertyType.ObjectReference && sp.objectReferenceValue != null)
-            {
-                DependencyViewerNode dependencyNode = new DependencyViewerNode()
-                {
-                    TargetObject = sp.objectReferenceValue
-                };
-
-                DependencyViewerGraph.CreateNodeLink(node, dependencyNode);
-            }
-        }
-    }
-
     private void CenterViewerOnGraph()
     {
         _graphDrawer.CenterViewerOnGraph(position);

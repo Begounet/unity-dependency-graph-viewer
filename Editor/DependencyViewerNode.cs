@@ -22,7 +22,7 @@ internal class DependencyViewerNode
     public UnityEngine.Object TargetObject
     {
         get { return _targetObject; }
-        set { _targetObject = value; }
+        private set { _targetObject = value; }
     }
 
 
@@ -47,8 +47,9 @@ internal class DependencyViewerNode
         set { _rightInputs = value; }
     }
 
-    public DependencyViewerNode()
+    public DependencyViewerNode(UnityEngine.Object targetObject)
     {
+        _targetObject = targetObject;
         _leftInputs = new List<DependencyViewerNode>();
         _rightInputs = new List<DependencyViewerNode>();
     }
