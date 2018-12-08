@@ -5,6 +5,7 @@ using UnityEditor;
 using System;
 using UnityEngine.SceneManagement;
 
+[ExecuteInEditMode]
 public class DependencyViewer : EditorWindow
 {
     public UnityEngine.Object refTarget;
@@ -23,6 +24,7 @@ public class DependencyViewer : EditorWindow
     private bool _readyToDrag;
     private bool _isDragging;
 
+    private IEnumerator _resolverWorkHandle;
 
     [MenuItem("GameObject/View Dependencies", priority = 10)]
     private static void ViewReferenceInCurrentSceneFromMenuCommand(MenuCommand menuCommand)
@@ -42,6 +44,11 @@ public class DependencyViewer : EditorWindow
     {
         refTarget = targetObject;
         BuildGraph();
+    }
+
+    IEnumerator GetEnumerator()
+    {
+        yield return null;
     }
 
     private void OnEnable()
@@ -69,10 +76,26 @@ public class DependencyViewer : EditorWindow
     public void BuildGraph()
     {
         _graph.CreateReferenceTargetNode(refTarget);
-        _resolver.BuildGraph();
+        _resolverWorkHandle = _resolver.BuildGraph();
+        _resolverWorkHandle.MoveNext();
         _graph.RearrangeNodesLayout();
         CenterViewerOnGraph();
     }
+
+    private void Update()
+    {
+        if (_resolverWorkHandle != null)
+        {
+            bool isResolverWorkCompleted = !_resolverWorkHandle.MoveNext();
+            _graph.RearrangeNodesLayout();
+            if (isResolverWorkCompleted)
+            {
+                _resolverWorkHandle = null;
+            }
+            Repaint();
+        }
+   }
+
     private void CenterViewerOnGraph()
     {
         _graphDrawer.CenterViewerOnGraph(position);

@@ -7,6 +7,8 @@ using System;
 
 internal class DependencyResolver
 {
+    private const int NumAssetPropertiesReferencesResolvedPerFrame = 20;
+
     private bool _isResolvingCompleted;
     public bool IsResolvingCompleted
     {
@@ -23,7 +25,7 @@ internal class DependencyResolver
         _settings = settings;
     }
 
-    public void BuildGraph()
+    public IEnumerator BuildGraph()
     {
         if (_settings.ShouldSearchInCurrentScene)
         {
@@ -36,20 +38,24 @@ internal class DependencyResolver
             }
         }
 
-        if (_settings.FindReferences)
-        {
-            FindReferencesAmongAssets(_graph.RefTargetNode);
-        }
-
         if (_settings.FindDependencies)
         {
             FindDependencies(_graph.RefTargetNode);
         }
+
+        if (_settings.FindReferences)
+        {
+            foreach (var it in FindReferencesAmongAssets(_graph.RefTargetNode))
+            {
+                yield return it;
+            }
+        }
     }
 
-    private void FindReferencesAmongAssets(DependencyViewerNode node)
+    private IEnumerable FindReferencesAmongAssets(DependencyViewerNode node)
     {
         string[] excludeFilters = _settings.ExcludeAssetFilters.Split(',');
+        int numPropertyChecked = 0;
 
         string[] allAssetPaths = AssetDatabase.GetAllAssetPaths();
         for (int assetPathIdx = 0; assetPathIdx < allAssetPaths.Length; ++assetPathIdx)
@@ -71,6 +77,13 @@ internal class DependencyResolver
                         // Reference found!
                         DependencyViewerNode reference = new DependencyViewerNode(obj);
                         DependencyViewerGraph.CreateNodeLink(reference, node);
+                    }
+                    ++numPropertyChecked;
+
+                    if (numPropertyChecked > NumAssetPropertiesReferencesResolvedPerFrame)
+                    {
+                        numPropertyChecked = 0;
+                        yield return new object();
                     }
                 }
             }
