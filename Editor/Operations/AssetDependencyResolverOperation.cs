@@ -9,11 +9,13 @@ internal class AssetDependencyResolverOperation : DependencyViewerOperation
     public int numProcessedAssets { get; set; }
     public DependencyViewerNode node { get; set; }
 
+    public UnityEngine.Object AssetBeingProcessed { get; set; }
+
     public override string GetStatus()
     {
-        return string.Format("[{0:00.0}%][{1}] Asset dependency resolving for node... ({2:000} / {3:000})", 
-            ((float) numProcessedAssets / numTotalAssets) * 100, 
-            node.Name, 
-            numProcessedAssets, numTotalAssets);
+        return string.Format("[{0:00.0}%][{1:0000}/{2:0000}][{3} -> {4}] Asset dependency resolving...", 
+            ((float) numProcessedAssets / numTotalAssets) * 100,
+            numProcessedAssets, numTotalAssets,
+            node.Name, AssetBeingProcessed.name);
     }
 }

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
 using System;
+using System.Linq;
 
 internal class DependencyResolver
 {
@@ -65,6 +66,8 @@ internal class DependencyResolver
         for (int i = 0; i < allGameObjects.Count; ++i)
         {
             GameObject currentGo = allGameObjects[i];
+            operationStatus.AssetBeingProcessed = currentGo;
+
             Component[] components = currentGo.GetComponents<Component>();
             for (int componentIndex = 0; componentIndex < components.Length; ++componentIndex)
             {
@@ -128,16 +131,16 @@ internal class DependencyResolver
         string[] excludeFilters = _settings.ExcludeAssetFilters.Split(',');
         int numPropertyChecked = 0;
 
-        string[] allAssetPaths = AssetDatabase.GetAllAssetPaths();
-        operationStatus.numTotalAssets = allAssetPaths.Length;
-        for (int assetPathIdx = 0; assetPathIdx < allAssetPaths.Length; ++assetPathIdx)
+        var allLocalAssetPaths = from assetPath in AssetDatabase.GetAllAssetPaths()
+                                 where assetPath.StartsWith("Assets/") && !IsAssetPathExcluded(assetPath, ref excludeFilters)
+                                 select assetPath;
+        
+        operationStatus.numTotalAssets = allLocalAssetPaths.Count();
+        foreach (string assetPath in allLocalAssetPaths)
         {
-            if (IsAssetPathExcluded(allAssetPaths[assetPathIdx], ref excludeFilters))
-            {
-                continue;
-            }
-            
-            UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(allAssetPaths[assetPathIdx]);
+            ++operationStatus.numProcessedAssets;
+
+            UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
             if (obj != null)
             {
                 SerializedObject objSO = new SerializedObject(obj);
@@ -155,7 +158,8 @@ internal class DependencyResolver
 
                     if (numPropertyChecked > NumAssetPropertiesReferencesResolvedPerFrame)
                     {
-                        operationStatus.numProcessedAssets = assetPathIdx;
+                        operationStatus.AssetBeingProcessed = obj;
+
                         numPropertyChecked = 0;
                         yield return operationStatus;
                     }
