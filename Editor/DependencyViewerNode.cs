@@ -9,6 +9,11 @@ internal class DependencyViewerNode
     {
         get
         {
+            if (_targetObject == null)
+            {
+                return "(null)";
+            }
+
             if (_targetObject is UnityEditor.MonoScript)
             {
                 return string.Format("{0} (Script)", _targetObject.name);

@@ -27,20 +27,21 @@ internal class DependencyResolver
 
     public IEnumerator<DependencyViewerOperation> BuildGraph()
     {
-        if (_settings.ShouldSearchInCurrentScene)
-        {
-            bool visitChildren = true;
-            List<Scene> currentOpenedScenes = DependencyViewerUtility.GetCurrentOpenedScenes();
-            if (_settings.FindReferences)
-            {
-                DependencyViewerUtility.ForeachGameObjectInScenes(currentOpenedScenes,
-                    visitChildren, (go) => FindReferenceInGameObject(_graph.RefTargetNode, go));
-            }
-        }
-
         if (_settings.FindDependencies)
         {
             FindDependencies(_graph.RefTargetNode);
+        }
+
+        if (_settings.ShouldSearchInCurrentScene)
+        {
+            List<Scene> currentOpenedScenes = DependencyViewerUtility.GetCurrentOpenedScenes();
+            if (_settings.FindReferences)
+            {
+                foreach (var currentOperation in FindReferencesAmongGameObjects(_graph.RefTargetNode, currentOpenedScenes))
+                {
+                    yield return currentOperation;
+                }
+            }
         }
 
         if (_settings.FindReferences)
@@ -52,6 +53,73 @@ internal class DependencyResolver
         }
     }
 
+    private IEnumerable<DependencyViewerOperation> FindReferencesAmongGameObjects(DependencyViewerNode node, List<Scene> scenes)
+    {
+        AssetDependencyResolverOperation operationStatus = new AssetDependencyResolverOperation();
+        operationStatus.node = node;
+
+        List<GameObject> allGameObjects = GetAllGameObjectsFromScenes(scenes);
+        operationStatus.numTotalAssets = allGameObjects.Count;
+
+        int numPropertiesCheck = 0;
+        for (int i = 0; i < allGameObjects.Count; ++i)
+        {
+            GameObject currentGo = allGameObjects[i];
+            Component[] components = currentGo.GetComponents<Component>();
+            for (int componentIndex = 0; componentIndex < components.Length; ++componentIndex)
+            {
+                Component component = components[componentIndex];
+                SerializedObject componentSO = new SerializedObject(component);
+                SerializedProperty componentSP = componentSO.GetIterator();
+
+                while (componentSP.NextVisible(true))
+                {
+                    // Reference found!
+                    if (componentSP.propertyType == SerializedPropertyType.ObjectReference && componentSP.objectReferenceValue == node.TargetObject)
+                    {
+                        DependencyViewerNode referenceNode = new DependencyViewerNode(component);
+                        DependencyViewerGraph.CreateNodeLink(referenceNode, node);
+                    }
+
+                    ++numPropertiesCheck;
+                    if (numPropertiesCheck > NumAssetPropertiesReferencesResolvedPerFrame)
+                    {
+                        numPropertiesCheck = 0;
+                        yield return operationStatus;
+                    }
+                }
+            }
+
+            ++operationStatus.numProcessedAssets;
+        }
+    }
+
+    private List<GameObject> GetAllGameObjectsFromScenes(List<Scene> scenes)
+    {
+        List<GameObject> gameObjects = new List<GameObject>();
+        List<GameObject> gameObjectsToCheck = new List<GameObject>();
+
+        List<GameObject> rootGameObjects = new List<GameObject>();
+        for (int sceneIdx = 0; sceneIdx < scenes.Count; ++sceneIdx)
+        {
+            Scene scene = scenes[sceneIdx];
+            scene.GetRootGameObjects(rootGameObjects);
+            gameObjectsToCheck.AddRange(rootGameObjects);
+        }
+
+        for (int gameObjectsToCheckIdx = 0; gameObjectsToCheckIdx < gameObjectsToCheck.Count; ++gameObjectsToCheckIdx)
+        {
+            GameObject currentGo = gameObjectsToCheck[gameObjectsToCheckIdx];
+            for (int childIdx = 0; childIdx < currentGo.transform.childCount; ++childIdx)
+            {
+                gameObjectsToCheck.Add(currentGo.transform.GetChild(childIdx).gameObject);
+            }
+            gameObjects.Add(currentGo);
+        }
+        
+        return gameObjects;
+    }
+    
     private IEnumerable<DependencyViewerOperation> FindReferencesAmongAssets(DependencyViewerNode node)
     {
         AssetDependencyResolverOperation operationStatus = new AssetDependencyResolverOperation();
