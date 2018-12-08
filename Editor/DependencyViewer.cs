@@ -19,12 +19,13 @@ public class DependencyViewer : EditorWindow
     private DependencyViewerGraph _graph;
     private DependencyViewerGraphDrawer _graphDrawer;
     private DependencyViewerSettingsOverlay _settingsOverlay;
+    private DependencyViewerStatusBar _statusBar;
     private DependencyResolver _resolver;
 
     private bool _readyToDrag;
     private bool _isDragging;
 
-    private IEnumerator _resolverWorkHandle;
+    private IEnumerator<DependencyViewerOperation> _resolverWorkHandle;
 
     [MenuItem("GameObject/View Dependencies", priority = 10)]
     private static void ViewReferenceInCurrentSceneFromMenuCommand(MenuCommand menuCommand)
@@ -58,6 +59,7 @@ public class DependencyViewer : EditorWindow
         _settings = DependencyViewerSettings.Create();
         _settingsOverlay = new DependencyViewerSettingsOverlay(_settings);
         _resolver = new DependencyResolver(_graph, _settings);
+        _statusBar = new DependencyViewerStatusBar();
 
         _graphDrawer.requestViewDependency += ViewDependencies;
         _settingsOverlay.onSettingsChanged += OnSettingsChanged;
@@ -87,11 +89,21 @@ public class DependencyViewer : EditorWindow
         if (_resolverWorkHandle != null)
         {
             bool isResolverWorkCompleted = !_resolverWorkHandle.MoveNext();
+
+            // Update status bar according to current operation state
+            DependencyViewerOperation currentOperation = _resolverWorkHandle.Current;
+            if (currentOperation != null)
+            {
+                _statusBar.SetText(currentOperation.GetStatus());
+            }
+
             _graph.RearrangeNodesLayout();
             if (isResolverWorkCompleted)
             {
                 _resolverWorkHandle = null;
+                _statusBar.SetText("Completed!");
             }
+
             Repaint();
         }
    }
@@ -111,11 +123,8 @@ public class DependencyViewer : EditorWindow
         UpdateInputs();
 
         _graphDrawer.Draw();
-
-        if (_settingsOverlay != null)
-        {
-            _settingsOverlay.Draw();
-        }
+        _settingsOverlay.Draw();
+        _statusBar.Draw(position);
     }
 
     private void UpdateInputs()

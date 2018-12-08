@@ -7,7 +7,7 @@ using System;
 
 internal class DependencyResolver
 {
-    private const int NumAssetPropertiesReferencesResolvedPerFrame = 20;
+    private const int NumAssetPropertiesReferencesResolvedPerFrame = 100;
 
     private bool _isResolvingCompleted;
     public bool IsResolvingCompleted
@@ -25,7 +25,7 @@ internal class DependencyResolver
         _settings = settings;
     }
 
-    public IEnumerator BuildGraph()
+    public IEnumerator<DependencyViewerOperation> BuildGraph()
     {
         if (_settings.ShouldSearchInCurrentScene)
         {
@@ -45,19 +45,23 @@ internal class DependencyResolver
 
         if (_settings.FindReferences)
         {
-            foreach (var it in FindReferencesAmongAssets(_graph.RefTargetNode))
+            foreach (var currentOperation in FindReferencesAmongAssets(_graph.RefTargetNode))
             {
-                yield return it;
+                yield return currentOperation;
             }
         }
     }
 
-    private IEnumerable FindReferencesAmongAssets(DependencyViewerNode node)
+    private IEnumerable<DependencyViewerOperation> FindReferencesAmongAssets(DependencyViewerNode node)
     {
+        AssetDependencyResolverOperation operationStatus = new AssetDependencyResolverOperation();
+        operationStatus.node = node;
+
         string[] excludeFilters = _settings.ExcludeAssetFilters.Split(',');
         int numPropertyChecked = 0;
 
         string[] allAssetPaths = AssetDatabase.GetAllAssetPaths();
+        operationStatus.numTotalAssets = allAssetPaths.Length;
         for (int assetPathIdx = 0; assetPathIdx < allAssetPaths.Length; ++assetPathIdx)
         {
             if (IsAssetPathExcluded(allAssetPaths[assetPathIdx], ref excludeFilters))
@@ -78,12 +82,14 @@ internal class DependencyResolver
                         DependencyViewerNode reference = new DependencyViewerNode(obj);
                         DependencyViewerGraph.CreateNodeLink(reference, node);
                     }
+
                     ++numPropertyChecked;
 
                     if (numPropertyChecked > NumAssetPropertiesReferencesResolvedPerFrame)
                     {
+                        operationStatus.numProcessedAssets = assetPathIdx;
                         numPropertyChecked = 0;
-                        yield return new object();
+                        yield return operationStatus;
                     }
                 }
             }
