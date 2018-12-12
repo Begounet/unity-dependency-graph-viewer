@@ -4,6 +4,9 @@ using UnityEngine;
 
 internal class DependencyViewerNode
 {
+    public string additionalInfo;
+
+    public enum NodeInputSide { Left, Right }
 
     public string Name
     {
@@ -22,7 +25,7 @@ internal class DependencyViewerNode
             return _targetObject.name;
         }
     }
-
+    
     private UnityEngine.Object _targetObject;
     public UnityEngine.Object TargetObject
     {
@@ -61,7 +64,7 @@ internal class DependencyViewerNode
 
     public float GetHeight()
     {
-        return DependencyViewerGraphDrawer.NodeHeight;
+        return DependencyViewerGraphDrawer.NodeHeight * 2; // TODO : Remove *2 since it is just for debug info
     }
 
     public float GetWidth()
@@ -82,5 +85,20 @@ internal class DependencyViewerNode
     public Vector2 GetRightInputAnchorPosition()
     {
         return new Vector2(_position.x + GetWidth(), _position.y + GetHeight() / 2);
+    }
+
+    public List<DependencyViewerNode> GetInputNodesFromSide(NodeInputSide side)
+    {
+        return side == NodeInputSide.Left ? _leftInputs : _rightInputs;
+    }
+
+    public void SetPositionX(float x)
+    {
+        _position.x = x;
+    }
+
+    public void SetPositionY(float y)
+    {
+        _position.y = y;
     }
 }

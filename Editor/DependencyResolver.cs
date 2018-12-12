@@ -30,7 +30,7 @@ internal class DependencyResolver
     {
         if (_settings.FindDependencies)
         {
-            FindDependencies(_graph.RefTargetNode);
+            FindDependencies(_graph.RefTargetNode, _settings.DependenciesDepth);
         }
 
         if (_settings.ShouldSearchInCurrentScene)
@@ -232,6 +232,11 @@ internal class DependencyResolver
             {
                 DependencyViewerNode dependencyNode = new DependencyViewerNode(sp.objectReferenceValue);
                 DependencyViewerGraph.CreateNodeLink(node, dependencyNode);
+
+                if (depth > 1)
+                {
+                    FindDependencies(dependencyNode, sp.objectReferenceValue, depth - 1);
+                }
             }
         }
     }

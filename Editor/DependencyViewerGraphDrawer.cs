@@ -113,6 +113,7 @@ internal class DependencyViewerGraphDrawer
         GUILayout.BeginArea(boxInsideRect);
         {
             EditorGUILayout.ObjectField(node.TargetObject, node.TargetObject.GetType(), false);
+            EditorGUILayout.LabelField(node.additionalInfo);
         }
         GUILayout.EndArea();
     }
@@ -149,8 +150,6 @@ internal class DependencyViewerGraphDrawer
 
     private void DrawNodeLinks(DependencyViewerNode node, List<DependencyViewerNode> inputs, NodeInputSide inputSide)
     {
-        Rect localWindowRect = GetLocalWindowRect();
-
         for (int i = 0; i < inputs.Count; ++i)
         {
             DependencyViewerNode inputNode = inputs[i];

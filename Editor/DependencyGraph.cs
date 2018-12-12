@@ -5,8 +5,6 @@ using UnityEngine;
 
 internal class DependencyViewerGraph
 {
-    enum NodeInputSide { Left, Right }
-
     private DependencyViewerNode _refTargetNode;
     internal DependencyViewerNode RefTargetNode
     {
@@ -18,14 +16,40 @@ internal class DependencyViewerGraph
     {
         _refTargetNode = new DependencyViewerNode(refTarget);
     }
-    
+
     public void RearrangeNodesLayout()
     {
-        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.LeftInputs, NodeInputSide.Left);
-        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.RightInputs, NodeInputSide.Right);
+        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.LeftInputs, DependencyViewerNode.NodeInputSide.Left);
+        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.RightInputs, DependencyViewerNode.NodeInputSide.Right);
+
+        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, DependencyViewerNode.NodeInputSide.Right, (data) =>
+        {
+            //data.currentNode.Position = new Vector2(data.depth * data.currentNode.GetWidth() * 1.5f, data.childIdx * data.currentNode.GetHeight());
+            data.currentNode.Position = new Vector2(data.depth, data.childIdx);
+        });
+
+        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, DependencyViewerNode.NodeInputSide.Right, (data) =>
+        {
+            List<DependencyViewerNode> childNodes = data.currentNode.GetInputNodesFromSide(DependencyViewerNode.NodeInputSide.Right);
+            if (childNodes.Count == 1)
+            {
+                data.currentNode.SetPositionY(childNodes[0].Position.y);
+            }
+            else if (childNodes.Count > 1)
+            {
+                float min = childNodes[0].Position.y;
+                float max = childNodes[childNodes.Count - 1].Position.y;
+                data.currentNode.SetPositionY(Mathf.Lerp(min, max, 0.5f));
+            }
+        });
+
+        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, DependencyViewerNode.NodeInputSide.Right, (data) =>
+        {
+            data.currentNode.Position = data.currentNode.Position * data.currentNode.GetSize();
+        });
     }
 
-    private void RearrangeNodesInputsLayout(DependencyViewerNode refNode, List<DependencyViewerNode> inputNodes, NodeInputSide inputSide)
+    private void RearrangeNodesInputsLayout(DependencyViewerNode refNode, List<DependencyViewerNode> inputNodes, DependencyViewerNode.NodeInputSide inputSide)
     {
         int numInputs = inputNodes.Count;
         float totalNodeHeights = 0;
@@ -38,7 +62,7 @@ internal class DependencyViewerGraph
             }
         }
 
-        int layoutFlowDirection = (inputSide == NodeInputSide.Left ? -1 : 1);
+        int layoutFlowDirection = (inputSide == DependencyViewerNode.NodeInputSide.Left ? -1 : 1);
 
         float offsetY = (refNode.Position.y + refNode.GetHeight() / 2) - (totalNodeHeights / 2);
         for (int inputIdx = 0; inputIdx < numInputs; ++inputIdx)
