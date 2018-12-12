@@ -57,6 +57,7 @@ public class DependencyViewer : EditorWindow
         _graph = new DependencyViewerGraph();
         _graphDrawer = new DependencyViewerGraphDrawer(_graph);
         _settings = DependencyViewerSettings.Create();
+        _settings.Load();
         _settingsOverlay = new DependencyViewerSettingsOverlay(_settings);
         _resolver = new DependencyResolver(_graph, _settings);
         _statusBar = new DependencyViewerStatusBar();
@@ -68,6 +69,11 @@ public class DependencyViewer : EditorWindow
         {
             BuildGraph();
         }
+    }
+
+    private void OnDisable()
+    {
+        _settings.Save();
     }
 
     private void OnSettingsChanged()
@@ -120,11 +126,11 @@ public class DependencyViewer : EditorWindow
             return;
         }
 
-        UpdateInputs();
-
-        _graphDrawer.Draw();
+        _graphDrawer.Draw(position);
         _settingsOverlay.Draw();
         _statusBar.Draw(position);
+
+        UpdateInputs();
     }
 
     private void UpdateInputs()

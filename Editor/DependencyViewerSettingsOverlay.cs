@@ -6,7 +6,7 @@ using System;
 
 internal class DependencyViewerSettingsOverlay
 {
-    private static readonly Rect OverlayRect = new Rect(10, 10, 300, 80);
+    private static readonly Rect OverlayRect = new Rect(10, 10, 300, EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing * 3);
 
     internal event Action onSettingsChanged;
 
@@ -19,15 +19,15 @@ internal class DependencyViewerSettingsOverlay
     {
         _settings = settings;
         _settingsSO = new SerializedObject(_settings);
-        _isExpanded = false;
+        _isExpanded = true;
     }
 
     public void Draw()
     {
         Rect currentOverlayRect = OverlayRect;
-        if (!_isExpanded)
+        if (_isExpanded)
         {
-            currentOverlayRect.height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing * 2;
+            currentOverlayRect.height += CalculateOverlayHeight();
         }
 
         GUILayout.BeginArea(currentOverlayRect, EditorStyles.helpBox);
@@ -57,5 +57,20 @@ internal class DependencyViewerSettingsOverlay
             }
         }
         GUILayout.EndArea();
+    }
+
+    public float CalculateOverlayHeight()
+    {
+        float height = 0;
+        SerializedProperty sp = _settingsSO.GetIterator();
+        sp.NextVisible(true); // Skip script property
+
+        while (sp.NextVisible(true))
+        {
+            height += EditorGUI.GetPropertyHeight(sp, true);
+            height += EditorGUIUtility.standardVerticalSpacing;
+        }
+
+        return height;
     }
 }

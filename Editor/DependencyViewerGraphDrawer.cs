@@ -30,6 +30,8 @@ internal class DependencyViewerGraphDrawer
     public DependencyViewerNode RefTargetNode
     { get { return _graph.RefTargetNode; } }
 
+    private Rect _lastWindowRect;
+
     public DependencyViewerGraphDrawer(DependencyViewerGraph graph)
     {
         _graph = graph;
@@ -55,8 +57,10 @@ internal class DependencyViewerGraphDrawer
         _screenOffset += delta;
     }
 
-    public void Draw()
+    public void Draw(Rect windowRect)
     {
+        _lastWindowRect = windowRect;
+
         if (RefTargetNode != null)
         {
             DrawHierarchyNodesFromRefTargetNode();
@@ -88,7 +92,13 @@ internal class DependencyViewerGraphDrawer
     private void DrawNode(DependencyViewerNode node)
     {
         Rect boxRect = new Rect(GetRelativePosition(node.Position), node.GetSize());
-        
+
+        Rect localWindowRect = GetLocalWindowRect();
+        if (!localWindowRect.Overlaps(boxRect))
+        {
+            return;
+        }
+
         GUI.Box(boxRect, GUIContent.none, GUI.skin.FindStyle("flow node 0"));
 
         DrawNodeTitleBar(node, boxRect);
@@ -139,6 +149,8 @@ internal class DependencyViewerGraphDrawer
 
     private void DrawNodeLinks(DependencyViewerNode node, List<DependencyViewerNode> inputs, NodeInputSide inputSide)
     {
+        Rect localWindowRect = GetLocalWindowRect();
+
         for (int i = 0; i < inputs.Count; ++i)
         {
             DependencyViewerNode inputNode = inputs[i];
@@ -146,10 +158,11 @@ internal class DependencyViewerGraphDrawer
             DependencyViewerNode leftNode = (inputSide == NodeInputSide.Left ? node : inputNode);
             DependencyViewerNode rightNode = (inputSide == NodeInputSide.Right ? node : inputNode);
 
-            Drawing.DrawLine(
-                GetRelativePosition(leftNode.GetLeftInputAnchorPosition()),
-                GetRelativePosition(rightNode.GetRightInputAnchorPosition()),
-                LinkColor, LinkWidth);
+
+            Vector2 start = GetRelativePosition(leftNode.GetLeftInputAnchorPosition());
+            Vector2 end = GetRelativePosition(rightNode.GetRightInputAnchorPosition());
+
+            Drawing.DrawLine(start, end, LinkColor, LinkWidth);
 
             DrawNodeLinks(
                 inputNode, 
@@ -158,4 +171,10 @@ internal class DependencyViewerGraphDrawer
         }
     }
 
+    private Rect GetLocalWindowRect()
+    {
+        Rect localWindowRect = _lastWindowRect;
+        localWindowRect.y = 0;
+        return localWindowRect;
+    }
 }

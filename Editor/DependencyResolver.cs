@@ -72,6 +72,11 @@ internal class DependencyResolver
             for (int componentIndex = 0; componentIndex < components.Length; ++componentIndex)
             {
                 Component component = components[componentIndex];
+                if (component == null)
+                {
+                    continue;
+                }
+
                 SerializedObject componentSO = new SerializedObject(component);
                 SerializedProperty componentSP = componentSO.GetIterator();
 

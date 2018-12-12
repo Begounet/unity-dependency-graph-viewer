@@ -1,16 +1,20 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 internal class DependencyViewerSettings : ScriptableObject
 {
-    //[SerializeField] // Disabled for now because not managed yet
-    private int _referencesDepth = 1;
-    public int ReferencesDepth
+    private const string DependencyViewerSettingsSaveName = "DependencyViewerSettings";
+
+    [Flags]
+    public enum ObjectType
     {
-        get { return _referencesDepth; }
-        set { _referencesDepth = value; }
+        ScriptableObject = 0x01,
+        Everything = 0xFF
     }
+
 
     //[SerializeField] // Disabled for now because not managed yet
     private bool _shouldSearchInCurrentScene = true;
@@ -37,6 +41,31 @@ internal class DependencyViewerSettings : ScriptableObject
     }
 
     [SerializeField]
+    private int _dependenciesDepth = 1;
+    public int DependenciesDepth
+    {
+        get { return _dependenciesDepth; }
+        set { _dependenciesDepth = value; }
+    }
+
+    [SerializeField]
+    [EnumFlags]
+    private ObjectType _objectTypesFilter = ObjectType.Everything;
+    public ObjectType ObjectTypesFilter
+    {
+        get { return _objectTypesFilter; }
+        set { _objectTypesFilter = value; }
+    }
+
+    [SerializeField]
+    private string _assetsSearchRootDirectory;
+    public string AssetsSearchRootDirectory
+    {
+        get { return _assetsSearchRootDirectory; }
+        set { _assetsSearchRootDirectory = value; }
+    }
+
+    [SerializeField]
     [Tooltip("Filters when browsing project files for asset referencing")]
     private string _excludeAssetFilters = ".dll,.a,.so,.asmdef,.aar,.bundle,.jar";
     public string ExcludeAssetFilters
@@ -50,5 +79,20 @@ internal class DependencyViewerSettings : ScriptableObject
         DependencyViewerSettings settings = ScriptableObject.CreateInstance<DependencyViewerSettings>();
         settings.hideFlags = HideFlags.DontSave | HideFlags.HideInHierarchy;
         return settings;
+    }
+
+    public void Save()
+    {
+        var data = EditorJsonUtility.ToJson(this, false);
+        EditorPrefs.SetString(DependencyViewerSettingsSaveName, data);
+    }
+
+    public void Load()
+    {
+        if (EditorPrefs.HasKey(DependencyViewerSettingsSaveName))
+        {
+            var data = EditorPrefs.GetString(DependencyViewerSettingsSaveName);
+            EditorJsonUtility.FromJsonOverwrite(data, this);
+        }        
     }
 }
