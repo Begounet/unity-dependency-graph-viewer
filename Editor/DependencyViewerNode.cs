@@ -1,11 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 internal class DependencyViewerNode
 {
-    public string additionalInfo;
-
     public enum NodeInputSide { Left, Right }
 
     public string Name
@@ -55,6 +54,14 @@ internal class DependencyViewerNode
         set { _rightInputs = value; }
     }
 
+    private float _mod;
+    public float Mod
+    {
+        get { return _mod; }
+        set { _mod = value; }
+    }
+
+
     public DependencyViewerNode(UnityEngine.Object targetObject)
     {
         _targetObject = targetObject;
@@ -64,7 +71,7 @@ internal class DependencyViewerNode
 
     public float GetHeight()
     {
-        return DependencyViewerGraphDrawer.NodeHeight * 2; // TODO : Remove *2 since it is just for debug info
+        return DependencyViewerGraphDrawer.NodeHeight;
     }
 
     public float GetWidth()
@@ -87,11 +94,6 @@ internal class DependencyViewerNode
         return new Vector2(_position.x + GetWidth(), _position.y + GetHeight() / 2);
     }
 
-    public List<DependencyViewerNode> GetInputNodesFromSide(NodeInputSide side)
-    {
-        return side == NodeInputSide.Left ? _leftInputs : _rightInputs;
-    }
-
     public void SetPositionX(float x)
     {
         _position.x = x;
@@ -100,5 +102,117 @@ internal class DependencyViewerNode
     public void SetPositionY(float y)
     {
         _position.y = y;
+    }
+
+    public List<DependencyViewerNode> GetInputNodesFromSide(NodeInputSide side)
+    {
+        return side == NodeInputSide.Left ? _leftInputs : _rightInputs;
+    }
+
+    public DependencyViewerNode GetParent(NodeInputSide treeSide)
+    {
+        var parentList = (treeSide == NodeInputSide.Left ? _rightInputs : _leftInputs);
+        return (parentList.Count > 0 ? parentList[0] : null);
+    }
+
+    public List<DependencyViewerNode> GetChildren(NodeInputSide treeSide)
+    {
+        return GetInputNodesFromSide(treeSide);
+    }
+
+    public int GetSiblingIndex(NodeInputSide treeSide)
+    {
+        var parentNode = GetParent(treeSide);
+        if (parentNode == null)
+        {
+            return 0;
+        }
+
+        var siblings = parentNode.GetChildren(treeSide);
+        for (int siblingIdx = 0; siblingIdx < siblings.Count; ++siblingIdx)
+        {
+            if (siblings[siblingIdx] == this)
+            {
+                return siblingIdx;
+            }
+        }
+        return -1;
+    }
+
+    public DependencyViewerNode GetFirstSibling(NodeInputSide treeSide)
+    {
+        var parent = GetParent(treeSide);
+        if (parent == null)
+        {
+            return this;
+        }
+
+        var childNodes = parent.GetChildren(treeSide);
+        return (childNodes.Count > 0 ? childNodes[0] : null);
+    }
+
+    public DependencyViewerNode GetLastSibling(NodeInputSide treeSide)
+    {
+        var parent = GetParent(treeSide);
+        if (parent == null)
+        {
+            return this;
+        }
+
+        var childNodes = parent.GetChildren(treeSide);
+        return (childNodes.Count > 0 ? childNodes[childNodes.Count - 1] : null);
+    }
+
+    public DependencyViewerNode GetFirstChild(NodeInputSide treeSide)
+    {
+        var childNodes = GetChildren(treeSide);
+        return (childNodes.Count > 0 ? childNodes[0] : null);
+    }
+
+    public DependencyViewerNode GetLastChild(NodeInputSide treeSide)
+    {
+        var childNodes = GetChildren(treeSide);
+        return (childNodes.Count > 0 ? childNodes[childNodes.Count - 1] : null);
+    }
+
+    public DependencyViewerNode GetPreviousSibling(NodeInputSide treeSide)
+    {
+        var parent = GetParent(treeSide);
+        if (parent == null)
+        {
+            return null;
+        }
+
+        var childNodes = parent.GetChildren(treeSide);
+        int childIdx = GetSiblingIndex(treeSide);
+        return (childIdx > 0 ? childNodes[childIdx - 1] : null);
+    }
+
+    public DependencyViewerNode GetNextSibling(NodeInputSide treeSide)
+    {
+        var parent = GetParent(treeSide);
+        if (parent == null)
+        {
+            return null;
+        }
+
+        var childNodes = parent.GetChildren(treeSide);
+        int childIdx = GetSiblingIndex(treeSide);
+        return (childIdx + 1 < childNodes.Count ? childNodes[childIdx + 1] : null);
+    }
+    
+    public bool IsLeaf(NodeInputSide treeSide)
+    {
+        return (GetNumChildren(treeSide) == 0);
+    }
+
+    public bool IsFirstSibling(NodeInputSide treeSide)
+    {
+        return GetSiblingIndex(treeSide) == 0;
+    }
+
+    public int GetNumChildren(NodeInputSide treeSide)
+    {
+        return GetChildren(treeSide).Count;
     }
 }

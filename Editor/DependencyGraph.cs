@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 internal class DependencyViewerGraph
 {
+    // Distance between nodes
+    private const float SiblingDistance = 20;
+
     private DependencyViewerNode _refTargetNode;
     internal DependencyViewerNode RefTargetNode
     {
@@ -19,34 +23,156 @@ internal class DependencyViewerGraph
 
     public void RearrangeNodesLayout()
     {
-        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.LeftInputs, DependencyViewerNode.NodeInputSide.Left);
-        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.RightInputs, DependencyViewerNode.NodeInputSide.Right);
+        DependencyViewerNode.NodeInputSide referenceTreeSide = DependencyViewerNode.NodeInputSide.Left;
+        DependencyViewerNode.NodeInputSide dependencyTreeSide = DependencyViewerNode.NodeInputSide.Right;
 
-        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, DependencyViewerNode.NodeInputSide.Right, (data) =>
+        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.LeftInputs, referenceTreeSide);
+        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.RightInputs, dependencyTreeSide);
+
+        InitializeNodes();
+        CalculateInitialY();
+        CalculateFinalPositions(_refTargetNode, dependencyTreeSide);
+    }
+
+    private void InitializeNodes()
+    {
+        DependencyViewerNode.NodeInputSide dependencyTreeSide = DependencyViewerNode.NodeInputSide.Right;
+        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, dependencyTreeSide, (data) =>
         {
-            //data.currentNode.Position = new Vector2(data.depth * data.currentNode.GetWidth() * 1.5f, data.childIdx * data.currentNode.GetHeight());
-            data.currentNode.Position = new Vector2(data.depth, data.childIdx);
+            data.currentNode.Position = new Vector2(data.depth * (data.currentNode.GetWidth() + SiblingDistance), -1);
+            data.currentNode.Mod = 0;
         });
+    }
 
+    private void CalculateInitialY()
+    {
         TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, DependencyViewerNode.NodeInputSide.Right, (data) =>
         {
-            List<DependencyViewerNode> childNodes = data.currentNode.GetInputNodesFromSide(DependencyViewerNode.NodeInputSide.Right);
-            if (childNodes.Count == 1)
+            var node = data.currentNode;
+
+            if (node.IsLeaf(data.TreeSide))
             {
-                data.currentNode.SetPositionY(childNodes[0].Position.y);
+                if (node.IsFirstSibling(data.TreeSide))
+                {
+                    node.SetPositionY(0);
+                }
+                else
+                {
+                    var previousSibling = node.GetPreviousSibling(data.TreeSide);
+                    node.SetPositionY(previousSibling.Position.y + previousSibling.GetHeight() + SiblingDistance);
+                }
             }
-            else if (childNodes.Count > 1)
+            else if (node.GetNumChildren(data.TreeSide) == 1)
             {
-                float min = childNodes[0].Position.y;
-                float max = childNodes[childNodes.Count - 1].Position.y;
-                data.currentNode.SetPositionY(Mathf.Lerp(min, max, 0.5f));
+                if (node.IsFirstSibling(data.TreeSide))
+                {
+                    node.SetPositionY(node.GetChildren(data.TreeSide)[0].Position.y);
+                }
+                else
+                {
+                    var previousSibling = node.GetPreviousSibling(data.TreeSide);
+                    node.SetPositionY(previousSibling.Position.y + previousSibling.GetHeight() + SiblingDistance);
+                    node.Mod = node.Position.y - node.GetChildren(data.TreeSide)[0].Position.y;
+                }
+            }
+            else
+            {
+                var prevChild = node.GetFirstChild(data.TreeSide);
+                var nextChild = node.GetLastChild(data.TreeSide);
+                float mid = (nextChild.Position.y - prevChild.Position.y) / 2;
+
+                if (node.IsFirstSibling(data.TreeSide))
+                {
+                    node.SetPositionY(mid);
+                }
+                else
+                {
+                    node.SetPositionY(node.GetPreviousSibling(data.TreeSide).Position.y + node.GetHeight() + SiblingDistance);
+                    node.Mod = node.Position.y - mid;
+                }
+            }
+
+            if (node.GetNumChildren(data.TreeSide) > 0 && !node.IsFirstSibling(data.TreeSide))
+            {
+                CheckForConflicts(node, data.depth, data.TreeSide);
             }
         });
+    }
 
-        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, DependencyViewerNode.NodeInputSide.Right, (data) =>
+    private void CheckForConflicts(DependencyViewerNode node, int depth, DependencyViewerNode.NodeInputSide treeSide)
+    {
+        float minDistance = node.GetHeight() + SiblingDistance;
+        float shiftValue = 0.0f;
+        
+        var nodeContour = new Dictionary<int, float>();
+        TreeLayout.GetStartContour(node, depth, treeSide, 0, ref nodeContour);
+
+        var sibling = node.GetFirstSibling(treeSide);
+        while (sibling != null && sibling != node)
         {
-            data.currentNode.Position = data.currentNode.Position * data.currentNode.GetSize();
-        });
+            var siblingContour = new Dictionary<int, float>();
+            TreeLayout.GetEndContour(sibling, depth, treeSide, 0, ref siblingContour);
+
+            int maxContourDepth = Mathf.Min(siblingContour.Keys.Max(), nodeContour.Keys.Max());
+            for (int level = depth + 1; level <= maxContourDepth; ++level)
+            {
+                float distance = nodeContour[level] - siblingContour[level];
+                if (distance + shiftValue < minDistance)
+                {
+                    shiftValue = minDistance - distance;
+                }
+            }
+
+            if (shiftValue > 0)
+            {
+                node.SetPositionY(node.Position.y + shiftValue);
+                node.Mod += shiftValue;
+
+                CenterNodesBetween(node, sibling, treeSide, depth);
+
+                shiftValue = 0;
+            }
+
+            sibling = sibling.GetNextSibling(treeSide);
+        }
+    }
+
+    private void CenterNodesBetween(DependencyViewerNode node, DependencyViewerNode sibling, DependencyViewerNode.NodeInputSide treeSide, int depth)
+    {
+        int firstNodeIdx = sibling.GetSiblingIndex(treeSide);
+        int lastSiblingNodeIdx = node.GetSiblingIndex(treeSide);
+
+        int numNodesBetween = (lastSiblingNodeIdx - firstNodeIdx) - 1;
+
+        if (numNodesBetween > 0)
+        {
+            float distanceBetweenNodes = (node.Position.y - sibling.Position.y) / (numNodesBetween + 1);
+
+            int count = 1;
+            for (int i = firstNodeIdx + 1; i < lastSiblingNodeIdx; ++i)
+            {
+                var middleNode = node.GetParent(treeSide).GetChildren(treeSide)[i];
+                float desiredY = sibling.Position.y + (distanceBetweenNodes * count);
+                float offset = desiredY - middleNode.Position.y;
+                middleNode.SetPositionY(middleNode.Position.y + offset);
+                middleNode.Mod += offset;
+
+                ++count;
+            }
+
+            CheckForConflicts(node, depth, treeSide);
+        }
+    }
+
+    private void CalculateFinalPositions(DependencyViewerNode node, DependencyViewerNode.NodeInputSide treeSide, float modSum = 0)
+    {
+        node.SetPositionY(node.Position.y + modSum);
+        modSum += node.Mod;
+
+        foreach (var child in node.GetChildren(treeSide))
+        {
+            CalculateFinalPositions(child, treeSide, modSum);
+        }
     }
 
     private void RearrangeNodesInputsLayout(DependencyViewerNode refNode, List<DependencyViewerNode> inputNodes, DependencyViewerNode.NodeInputSide inputSide)

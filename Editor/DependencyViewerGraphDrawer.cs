@@ -113,7 +113,6 @@ internal class DependencyViewerGraphDrawer
         GUILayout.BeginArea(boxInsideRect);
         {
             EditorGUILayout.ObjectField(node.TargetObject, node.TargetObject.GetType(), false);
-            EditorGUILayout.LabelField(node.additionalInfo);
         }
         GUILayout.EndArea();
     }
