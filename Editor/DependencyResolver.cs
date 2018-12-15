@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 using System;
 using System.Linq;
+using System.IO;
 
 internal class DependencyResolver
 {
@@ -33,7 +34,7 @@ internal class DependencyResolver
             FindDependencies(_graph.RefTargetNode, _settings.DependenciesDepth);
         }
 
-        if (_settings.ShouldSearchInCurrentScene)
+        if (_settings.SceneSearchType != DependencyViewerSettings.SceneSearchMode.NoSearch)
         {
             List<Scene> currentOpenedScenes = DependencyViewerUtility.GetCurrentOpenedScenes();
             if (_settings.FindReferences)
@@ -45,7 +46,8 @@ internal class DependencyResolver
             }
         }
 
-        if (_settings.FindReferences)
+        bool searchOnlyInCurrentScene = (_settings.SceneSearchType == DependencyViewerSettings.SceneSearchMode.SearchOnlyInCurrentScene);
+        if (_settings.FindReferences && !searchOnlyInCurrentScene)
         {
             foreach (var currentOperation in FindReferencesAmongAssets(_graph.RefTargetNode))
             {
@@ -85,7 +87,7 @@ internal class DependencyResolver
                     // Reference found!
                     if (componentSP.propertyType == SerializedPropertyType.ObjectReference && 
                         componentSP.objectReferenceValue == node.TargetObject &&
-                        !IsObjectExludedBySettings(componentSP.objectReferenceValue))
+                        IsObjectAllowedBySettings(component))
                     {
                         DependencyViewerNode referenceNode = new DependencyViewerNode(component);
                         DependencyViewerGraph.CreateNodeLink(referenceNode, node);
@@ -156,7 +158,7 @@ internal class DependencyResolver
                 {
                     if (sp.propertyType == SerializedPropertyType.ObjectReference && 
                         sp.objectReferenceValue == node.TargetObject &&
-                        !IsObjectExludedBySettings(sp.objectReferenceValue))
+                        IsObjectAllowedBySettings(sp.objectReferenceValue))
                     {
                         // Reference found!
                         DependencyViewerNode reference = new DependencyViewerNode(obj);
@@ -186,6 +188,28 @@ internal class DependencyResolver
                 return true;
             }
         }
+
+        if (_settings.ReferencesAssetDirectories != null &&
+            _settings.ReferencesAssetDirectories.Length > 0)
+        {
+            bool isAssetAmongReferencesDirectory = false;
+            string assetFullPath = Path.GetFullPath(assetPath);
+            for (int i = 0; i < _settings.ReferencesAssetDirectories.Length; ++i)
+            {
+                if (Directory.Exists(_settings.ReferencesAssetDirectories[i]))
+                {
+                    string referenceAssetFullPath = Path.GetFullPath(_settings.ReferencesAssetDirectories[i]);
+                    if (assetFullPath.StartsWith(referenceAssetFullPath))
+                    {
+                        isAssetAmongReferencesDirectory = true;
+                        break;
+                    }
+                }
+            }
+
+            return !isAssetAmongReferencesDirectory;
+        }
+
         return false;
     }
 
@@ -201,7 +225,7 @@ internal class DependencyResolver
             {
                 if (sp.propertyType == SerializedPropertyType.ObjectReference && 
                     sp.objectReferenceValue == node.TargetObject &&
-                    !IsObjectExludedBySettings(sp.objectReferenceValue))
+                    IsObjectAllowedBySettings(sp.objectReferenceValue))
                 {
                     // Reference found!
                     DependencyViewerNode reference = new DependencyViewerNode(component);
@@ -236,7 +260,7 @@ internal class DependencyResolver
         {
             if (sp.propertyType == SerializedPropertyType.ObjectReference && 
                 sp.objectReferenceValue != null &&
-                !IsObjectExludedBySettings(sp.objectReferenceValue))
+                IsObjectAllowedBySettings(sp.objectReferenceValue))
             {
                 DependencyViewerNode dependencyNode = new DependencyViewerNode(sp.objectReferenceValue);
                 DependencyViewerGraph.CreateNodeLink(node, dependencyNode);
@@ -249,8 +273,8 @@ internal class DependencyResolver
         }
     }
 
-    private bool IsObjectExludedBySettings(UnityEngine.Object obj)
+    private bool IsObjectAllowedBySettings(UnityEngine.Object obj)
     {
-        return (obj is MonoScript && !_settings.DisplayScripts);
+        return (_settings.CanObjectTypeBeIncluded(obj));
     }
 }

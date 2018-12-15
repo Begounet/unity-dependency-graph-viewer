@@ -28,16 +28,15 @@ public class DependencyViewer : EditorWindow
     private IEnumerator<DependencyViewerOperation> _resolverWorkHandle;
 
     [MenuItem("GameObject/View Dependencies", priority = 10)]
-    private static void ViewReferenceInCurrentSceneFromMenuCommand(MenuCommand menuCommand)
+    private static void ViewReferencesFromMenuCommand(MenuCommand menuCommand)
     {
-        ViewReferenceInCurrentScene();
+        ViewReferences();
     }
 
     [MenuItem("Assets/View Dependencies")]
-    public static void ViewReferenceInCurrentScene()
+    public static void ViewReferences()
     {
         DependencyViewer referenceViewer = EditorWindow.GetWindow<DependencyViewer>("Dependency Viewer");
-        referenceViewer.Settings.ShouldSearchInCurrentScene = true;
         referenceViewer.ViewDependencies(Selection.activeObject);
     }
 

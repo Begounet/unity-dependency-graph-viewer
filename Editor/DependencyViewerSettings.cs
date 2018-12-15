@@ -13,62 +13,30 @@ internal class DependencyViewerSettings : ScriptableObject
     [Flags]
     public enum ObjectType
     {
-        ScriptableObject = 0x01,
-        Everything = 0xFF
+        ScriptableObject    = 0x01,
+        Component           = 0x02,
+        MonoScript          = 0x04,
+        Everything          = 0xFF
     }
 
-
-    //[SerializeField] // Disabled for now because not managed yet
-    private bool _shouldSearchInCurrentScene = true;
-    public bool ShouldSearchInCurrentScene
+    public enum SceneSearchMode
     {
-        get { return _shouldSearchInCurrentScene; }
-        set { _shouldSearchInCurrentScene = value; }
+        NoSearch,
+        SearchOnlyInCurrentScene,
+        SearchEverywhere
     }
 
+
+    [Header("References")]
+    
     [SerializeField]
+    [Tooltip("If checked, the references will be searched")]
     private bool _findReferences = true;
     public bool FindReferences
     {
         get { return _findReferences; }
         set { _findReferences = value; }
     }
-
-    [SerializeField]
-    private bool _findDependencies = true;
-    public bool FindDependencies
-    {
-        get { return _findDependencies; }
-        set { _findDependencies = value; }
-    }
-    
-    [SerializeField]
-    [EnumFlags]
-    private ObjectType _objectTypesFilter = ObjectType.Everything;
-    public ObjectType ObjectTypesFilter
-    {
-        get { return _objectTypesFilter; }
-        set { _objectTypesFilter = value; }
-    }
-
-    [SerializeField]
-    private string _assetsSearchRootDirectory;
-    public string AssetsSearchRootDirectory
-    {
-        get { return _assetsSearchRootDirectory; }
-        set { _assetsSearchRootDirectory = value; }
-    }
-
-    [Header("Dependencies")]
-
-    [SerializeField]
-    private int _dependenciesDepth = 1;
-    public int DependenciesDepth
-    {
-        get { return _dependenciesDepth; }
-        set { _dependenciesDepth = value; }
-    }
-
 
     [SerializeField]
     [Tooltip("Filters when browsing project files for asset referencing")]
@@ -79,15 +47,55 @@ internal class DependencyViewerSettings : ScriptableObject
         set { _excludeAssetFilters = value; }
     }
 
-    [Header("Common")]
+    [SerializeField]
+    [Tooltip("If set, only these directories will be browsed for references. Can really improve search speed.")]
+    private string[] _referencesAssetsDirectories;
+    public string[] ReferencesAssetDirectories
+    {
+        get { return _referencesAssetsDirectories; }
+        set { _referencesAssetsDirectories = value; }
+    }
 
     [SerializeField]
-    [Tooltip("If enabled, the scripts will also be displayed")]
-    private bool _displayScripts = false;
-    public bool DisplayScripts
+    private SceneSearchMode _sceneSearchType = SceneSearchMode.SearchEverywhere;
+    public SceneSearchMode SceneSearchType
     {
-        get { return _displayScripts; }
-        set { _displayScripts = value; }
+        get { return _sceneSearchType; }
+        set { _sceneSearchType = value; }
+    }
+
+
+    [Header("Dependencies")]
+
+    [SerializeField]
+    [Tooltip("If checked, the dependencies will be searched")]
+    private bool _findDependencies = true;
+    public bool FindDependencies
+    {
+        get { return _findDependencies; }
+        set { _findDependencies = value; }
+    }
+
+    [SerializeField]
+    [Tooltip("Defines the depth of the search among the dependencies")]
+    private int _dependenciesDepth = 1;
+    public int DependenciesDepth
+    {
+        get { return _dependenciesDepth; }
+        set { _dependenciesDepth = value; }
+    }
+
+
+    [Header("Common")]
+    
+    [SerializeField]
+    [EnumFlags]
+    [Tooltip("Defines the object types to analyze")]
+    private ObjectType _objectTypesFilter = ObjectType.Everything;
+    public ObjectType ObjectTypesFilter
+    {
+        get { return _objectTypesFilter; }
+        set { _objectTypesFilter = value; }
     }
 
 
@@ -111,6 +119,29 @@ internal class DependencyViewerSettings : ScriptableObject
             var data = EditorPrefs.GetString(DependencyViewerSettingsSaveName);
             EditorJsonUtility.FromJsonOverwrite(data, this);
         }        
+    }
+
+    public bool CanObjectTypeBeIncluded(UnityEngine.Object obj)
+    {
+        if ((ObjectTypesFilter & ObjectType.ScriptableObject) != 0 &&
+            obj is ScriptableObject)
+        {
+            return true;
+        }
+
+        if ((ObjectTypesFilter & ObjectType.Component) != 0 &&
+            obj is Component)
+        {
+            return true;
+        }
+       
+        if ((ObjectTypesFilter & ObjectType.MonoScript) != 0 &&
+            obj is MonoScript)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     void OnValidate()
