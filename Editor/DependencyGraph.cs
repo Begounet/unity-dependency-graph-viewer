@@ -6,9 +6,6 @@ using UnityEngine;
 
 internal class DependencyViewerGraph
 {
-    // Distance between nodes
-    private const float SiblingDistance = 20;
-
     private DependencyViewerNode _refTargetNode;
     internal DependencyViewerNode RefTargetNode
     {
@@ -23,30 +20,30 @@ internal class DependencyViewerGraph
 
     public void RearrangeNodesLayout()
     {
-        DependencyViewerNode.NodeInputSide referenceTreeSide = DependencyViewerNode.NodeInputSide.Left;
-        DependencyViewerNode.NodeInputSide dependencyTreeSide = DependencyViewerNode.NodeInputSide.Right;
-
-        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.LeftInputs, referenceTreeSide);
-        RearrangeNodesInputsLayout(_refTargetNode, _refTargetNode.RightInputs, dependencyTreeSide);
-
-        InitializeNodes();
-        CalculateInitialY();
-        CalculateFinalPositions(_refTargetNode, dependencyTreeSide);
+        OrganizeNodesInTree(DependencyViewerNode.NodeInputSide.Left);
+        OrganizeNodesInTree(DependencyViewerNode.NodeInputSide.Right);
     }
 
-    private void InitializeNodes()
+    private void OrganizeNodesInTree(DependencyViewerNode.NodeInputSide treeSide)
     {
-        DependencyViewerNode.NodeInputSide dependencyTreeSide = DependencyViewerNode.NodeInputSide.Right;
-        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, dependencyTreeSide, (data) =>
+        InitializeNodes(treeSide);
+        CalculateInitialY(treeSide);
+        CalculateFinalPositions(_refTargetNode, treeSide);
+    }
+
+    private void InitializeNodes(DependencyViewerNode.NodeInputSide treeSide)
+    {
+        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, treeSide, (data) =>
         {
-            data.currentNode.Position = new Vector2(data.depth * (data.currentNode.GetWidth() + SiblingDistance), -1);
+            int direction = (treeSide == DependencyViewerNode.NodeInputSide.Right ? 1 : -1);
+            data.currentNode.Position = new Vector2(data.depth * (data.currentNode.GetWidth() + DependencyViewerGraphDrawer.DistanceBetweenNodes.x) * direction, -1);
             data.currentNode.Mod = 0;
         });
     }
 
-    private void CalculateInitialY()
+    private void CalculateInitialY(DependencyViewerNode.NodeInputSide treeSide)
     {
-        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, DependencyViewerNode.NodeInputSide.Right, (data) =>
+        TreeLayout.ForeachNode_PostOrderTraversal(_refTargetNode, treeSide, (data) =>
         {
             var node = data.currentNode;
 
@@ -59,7 +56,7 @@ internal class DependencyViewerGraph
                 else
                 {
                     var previousSibling = node.GetPreviousSibling(data.TreeSide);
-                    node.SetPositionY(previousSibling.Position.y + previousSibling.GetHeight() + SiblingDistance);
+                    node.SetPositionY(previousSibling.Position.y + previousSibling.GetHeight() + DependencyViewerGraphDrawer.DistanceBetweenNodes.y);
                 }
             }
             else if (node.GetNumChildren(data.TreeSide) == 1)
@@ -71,7 +68,7 @@ internal class DependencyViewerGraph
                 else
                 {
                     var previousSibling = node.GetPreviousSibling(data.TreeSide);
-                    node.SetPositionY(previousSibling.Position.y + previousSibling.GetHeight() + SiblingDistance);
+                    node.SetPositionY(previousSibling.Position.y + previousSibling.GetHeight() + DependencyViewerGraphDrawer.DistanceBetweenNodes.y);
                     node.Mod = node.Position.y - node.GetChildren(data.TreeSide)[0].Position.y;
                 }
             }
@@ -87,7 +84,7 @@ internal class DependencyViewerGraph
                 }
                 else
                 {
-                    node.SetPositionY(node.GetPreviousSibling(data.TreeSide).Position.y + node.GetHeight() + SiblingDistance);
+                    node.SetPositionY(node.GetPreviousSibling(data.TreeSide).Position.y + node.GetHeight() + DependencyViewerGraphDrawer.DistanceBetweenNodes.y);
                     node.Mod = node.Position.y - mid;
                 }
             }
@@ -101,7 +98,7 @@ internal class DependencyViewerGraph
 
     private void CheckForConflicts(DependencyViewerNode node, int depth, DependencyViewerNode.NodeInputSide treeSide)
     {
-        float minDistance = node.GetHeight() + SiblingDistance;
+        float minDistance = node.GetHeight() + DependencyViewerGraphDrawer.DistanceBetweenNodes.y;
         float shiftValue = 0.0f;
         
         var nodeContour = new Dictionary<int, float>();
@@ -172,33 +169,6 @@ internal class DependencyViewerGraph
         foreach (var child in node.GetChildren(treeSide))
         {
             CalculateFinalPositions(child, treeSide, modSum);
-        }
-    }
-
-    private void RearrangeNodesInputsLayout(DependencyViewerNode refNode, List<DependencyViewerNode> inputNodes, DependencyViewerNode.NodeInputSide inputSide)
-    {
-        int numInputs = inputNodes.Count;
-        float totalNodeHeights = 0;
-        for (int inputIdx = 0; inputIdx < numInputs; ++inputIdx)
-        {
-            totalNodeHeights += inputNodes[inputIdx].GetHeight();
-            if (inputIdx + 1 < numInputs)
-            {
-                totalNodeHeights += DependencyViewerGraphDrawer.DistanceBetweenNodes.y;
-            }
-        }
-
-        int layoutFlowDirection = (inputSide == DependencyViewerNode.NodeInputSide.Left ? -1 : 1);
-
-        float offsetY = (refNode.Position.y + refNode.GetHeight() / 2) - (totalNodeHeights / 2);
-        for (int inputIdx = 0; inputIdx < numInputs; ++inputIdx)
-        {
-            DependencyViewerNode inputNode = inputNodes[inputIdx];
-            inputNode.Position = new Vector2(
-                (_refTargetNode.Position.x + DependencyViewerGraphDrawer.DistanceBetweenNodes.x) * layoutFlowDirection,
-                offsetY);
-
-            offsetY += inputNode.GetHeight() + DependencyViewerGraphDrawer.DistanceBetweenNodes.y;
         }
     }
 

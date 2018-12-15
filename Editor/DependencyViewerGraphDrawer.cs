@@ -8,7 +8,7 @@ internal class DependencyViewerGraphDrawer
 {
     enum NodeInputSide { Left, Right }
 
-    internal static readonly Vector2 DistanceBetweenNodes = new Vector2(250, 30);
+    internal static readonly Vector2 DistanceBetweenNodes = new Vector2(30, 30);
     internal static readonly Vector2 NodeInsidePadding = new Vector2(10, 10);
     internal const float NodeWidth = 200;
     internal const float NodeHeight = 50;
