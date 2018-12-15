@@ -96,6 +96,7 @@ internal class DependencyViewerGraphDrawer
         Rect localWindowRect = GetLocalWindowRect();
         if (!localWindowRect.Overlaps(boxRect))
         {
+            //Debug.Log("Node " + node.Name + " not drawn");
             return;
         }
 
@@ -172,6 +173,7 @@ internal class DependencyViewerGraphDrawer
     private Rect GetLocalWindowRect()
     {
         Rect localWindowRect = _lastWindowRect;
+        localWindowRect.x = 0;
         localWindowRect.y = 0;
         return localWindowRect;
     }

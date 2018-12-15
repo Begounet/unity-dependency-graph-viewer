@@ -64,7 +64,7 @@ public class DependencyViewer : EditorWindow
 
         _graphDrawer.requestViewDependency += ViewDependencies;
         _settingsOverlay.onSettingsChanged += OnSettingsChanged;
-
+        
         if (refTarget != null)
         {
             BuildGraph();
@@ -118,7 +118,7 @@ public class DependencyViewer : EditorWindow
     {
         _graphDrawer.CenterViewerOnGraph(position);
     }
-
+    
     private void OnGUI()
     {
         if (refTarget == null)
@@ -137,7 +137,10 @@ public class DependencyViewer : EditorWindow
     {
         Event e = Event.current;
 
-        if (e.type == EventType.MouseDown && e.button == 0 && position.Contains(e.mousePosition))
+        Rect localWindowRect = position;
+        localWindowRect.x = localWindowRect.y = 0;
+
+        if (e.type == EventType.MouseDown && e.button == 0 && localWindowRect.Contains(e.mousePosition))
         {
             _readyToDrag = true;
         }
