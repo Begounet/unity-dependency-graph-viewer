@@ -8,6 +8,8 @@ internal class DependencyViewerSettings : ScriptableObject
 {
     private const string DependencyViewerSettingsSaveName = "DependencyViewerSettings";
 
+    public event Action onSettingsChanged;
+
     [Flags]
     public enum ObjectType
     {
@@ -39,15 +41,7 @@ internal class DependencyViewerSettings : ScriptableObject
         get { return _findDependencies; }
         set { _findDependencies = value; }
     }
-
-    [SerializeField]
-    private int _dependenciesDepth = 1;
-    public int DependenciesDepth
-    {
-        get { return _dependenciesDepth; }
-        set { _dependenciesDepth = value; }
-    }
-
+    
     [SerializeField]
     [EnumFlags]
     private ObjectType _objectTypesFilter = ObjectType.Everything;
@@ -65,6 +59,17 @@ internal class DependencyViewerSettings : ScriptableObject
         set { _assetsSearchRootDirectory = value; }
     }
 
+    [Header("Dependencies")]
+
+    [SerializeField]
+    private int _dependenciesDepth = 1;
+    public int DependenciesDepth
+    {
+        get { return _dependenciesDepth; }
+        set { _dependenciesDepth = value; }
+    }
+
+
     [SerializeField]
     [Tooltip("Filters when browsing project files for asset referencing")]
     private string _excludeAssetFilters = ".dll,.a,.so,.asmdef,.aar,.bundle,.jar";
@@ -73,6 +78,18 @@ internal class DependencyViewerSettings : ScriptableObject
         get { return _excludeAssetFilters; }
         set { _excludeAssetFilters = value; }
     }
+
+    [Header("Common")]
+
+    [SerializeField]
+    [Tooltip("If enabled, the scripts will also be displayed")]
+    private bool _displayScripts = false;
+    public bool DisplayScripts
+    {
+        get { return _displayScripts; }
+        set { _displayScripts = value; }
+    }
+
 
     public static DependencyViewerSettings Create()
     {
@@ -94,5 +111,13 @@ internal class DependencyViewerSettings : ScriptableObject
             var data = EditorPrefs.GetString(DependencyViewerSettingsSaveName);
             EditorJsonUtility.FromJsonOverwrite(data, this);
         }        
+    }
+
+    void OnValidate()
+    {
+        if (onSettingsChanged != null)
+        {
+            onSettingsChanged.Invoke();
+        }
     }
 }

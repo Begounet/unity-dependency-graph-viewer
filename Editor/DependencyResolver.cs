@@ -83,7 +83,9 @@ internal class DependencyResolver
                 while (componentSP.NextVisible(true))
                 {
                     // Reference found!
-                    if (componentSP.propertyType == SerializedPropertyType.ObjectReference && componentSP.objectReferenceValue == node.TargetObject)
+                    if (componentSP.propertyType == SerializedPropertyType.ObjectReference && 
+                        componentSP.objectReferenceValue == node.TargetObject &&
+                        !IsObjectExludedBySettings(componentSP.objectReferenceValue))
                     {
                         DependencyViewerNode referenceNode = new DependencyViewerNode(component);
                         DependencyViewerGraph.CreateNodeLink(referenceNode, node);
@@ -152,7 +154,9 @@ internal class DependencyResolver
                 SerializedProperty sp = objSO.GetIterator();
                 while (sp.NextVisible(true))
                 {
-                    if (sp.propertyType == SerializedPropertyType.ObjectReference && sp.objectReferenceValue == node.TargetObject)
+                    if (sp.propertyType == SerializedPropertyType.ObjectReference && 
+                        sp.objectReferenceValue == node.TargetObject &&
+                        !IsObjectExludedBySettings(sp.objectReferenceValue))
                     {
                         // Reference found!
                         DependencyViewerNode reference = new DependencyViewerNode(obj);
@@ -195,7 +199,9 @@ internal class DependencyResolver
             SerializedProperty sp = so.GetIterator();
             while (sp.NextVisible(true))
             {
-                if (sp.propertyType == SerializedPropertyType.ObjectReference && sp.objectReferenceValue == node.TargetObject)
+                if (sp.propertyType == SerializedPropertyType.ObjectReference && 
+                    sp.objectReferenceValue == node.TargetObject &&
+                    !IsObjectExludedBySettings(sp.objectReferenceValue))
                 {
                     // Reference found!
                     DependencyViewerNode reference = new DependencyViewerNode(component);
@@ -228,7 +234,9 @@ internal class DependencyResolver
         SerializedProperty sp = targetObjectSO.GetIterator();
         while (sp.NextVisible(true))
         {
-            if (sp.propertyType == SerializedPropertyType.ObjectReference && sp.objectReferenceValue != null)
+            if (sp.propertyType == SerializedPropertyType.ObjectReference && 
+                sp.objectReferenceValue != null &&
+                !IsObjectExludedBySettings(sp.objectReferenceValue))
             {
                 DependencyViewerNode dependencyNode = new DependencyViewerNode(sp.objectReferenceValue);
                 DependencyViewerGraph.CreateNodeLink(node, dependencyNode);
@@ -241,4 +249,8 @@ internal class DependencyResolver
         }
     }
 
+    private bool IsObjectExludedBySettings(UnityEngine.Object obj)
+    {
+        return (obj is MonoScript && !_settings.DisplayScripts);
+    }
 }

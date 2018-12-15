@@ -62,12 +62,20 @@ public class DependencyViewer : EditorWindow
         _resolver = new DependencyResolver(_graph, _settings);
         _statusBar = new DependencyViewerStatusBar();
 
+        _settings.onSettingsChanged += OnSettingsChanged;
         _graphDrawer.requestViewDependency += ViewDependencies;
-        _settingsOverlay.onSettingsChanged += OnSettingsChanged;
         
         if (refTarget != null)
         {
             BuildGraph();
+        }
+
+        // If the active object is already a DependencyViewerSettings,
+        // it probably means that some old settings are actually inspected.
+        // Update the active object to now use the new settings object.
+        if (Selection.activeObject is DependencyViewerSettings)
+        {
+            Selection.activeObject = _settings;
         }
     }
 
