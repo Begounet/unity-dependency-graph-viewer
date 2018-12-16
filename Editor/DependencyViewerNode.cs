@@ -215,4 +215,20 @@ internal class DependencyViewerNode
     {
         return GetChildren(treeSide).Count;
     }
+
+    public void ForeachChildrenRecursively(NodeInputSide treeSide, Action<DependencyViewerNode> onEachNodeCallback)
+    {
+        ForeachChildrenRecursively(treeSide, this, onEachNodeCallback);
+    }
+
+    private void ForeachChildrenRecursively(NodeInputSide treeSide, DependencyViewerNode node, Action<DependencyViewerNode> onEachNodeCallback)
+    {
+        var children = node.GetChildren(treeSide);
+        for (int i = 0; i < children.Count; ++i)
+        {
+            ForeachChildrenRecursively(treeSide, children[i], onEachNodeCallback);
+        }
+
+        onEachNodeCallback(node);
+    }
 }

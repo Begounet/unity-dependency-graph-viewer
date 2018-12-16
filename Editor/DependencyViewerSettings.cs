@@ -15,8 +15,7 @@ internal class DependencyViewerSettings : ScriptableObject
     {
         ScriptableObject    = 0x01,
         Component           = 0x02,
-        MonoScript          = 0x04,
-        Everything          = 0xFF
+        MonoScript          = 0x04
     }
 
     public enum SceneSearchMode
@@ -91,7 +90,7 @@ internal class DependencyViewerSettings : ScriptableObject
     [SerializeField]
     [EnumFlags]
     [Tooltip("Defines the object types to analyze")]
-    private ObjectType _objectTypesFilter = ObjectType.Everything;
+    private ObjectType _objectTypesFilter = (ObjectType) 0xFFFF;
     public ObjectType ObjectTypesFilter
     {
         get { return _objectTypesFilter; }
