@@ -20,9 +20,9 @@ internal class DependencyViewerGraph
 
     public void RearrangeNodesLayout()
     {
-        OrganizeNodesInTree(DependencyViewerNode.NodeInputSide.Left);
         OrganizeNodesInTree(DependencyViewerNode.NodeInputSide.Right);
-        CenterTreeToRoot(DependencyViewerNode.NodeInputSide.Left);
+        OrganizeNodesInTree(DependencyViewerNode.NodeInputSide.Left);
+        CenterTreeToRoot(DependencyViewerNode.NodeInputSide.Right);
     }
 
     private void OrganizeNodesInTree(DependencyViewerNode.NodeInputSide treeSide)
