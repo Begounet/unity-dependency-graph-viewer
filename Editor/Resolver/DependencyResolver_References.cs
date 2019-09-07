@@ -98,7 +98,6 @@ internal class DependencyResolver_References
     private IEnumerable<DependencyViewerOperation> FindReferencesAmongAssets(DependencyViewerNode node)
     {
         string[] excludeFilters = _settings.ExcludeAssetFilters.Split(',');
-        int numPropertyChecked = 0;
 
         var allLocalAssetPaths = from assetPath in AssetDatabase.GetAllAssetPaths()
                                  where assetPath.StartsWith("Assets/") && !IsAssetPathExcluded(assetPath, ref excludeFilters)
@@ -117,31 +116,92 @@ internal class DependencyResolver_References
             UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
             if (obj != null)
             {
-                SerializedObject objSO = new SerializedObject(obj);
-                SerializedProperty sp = objSO.GetIterator();
-                while (sp.NextVisible(true))
+                bool isPrefab = (obj is GameObject);
+                if (isPrefab)
                 {
-                    if (sp.propertyType == SerializedPropertyType.ObjectReference &&
-                        sp.objectReferenceValue == node.TargetObject &&
-                        IsObjectAllowedBySettings(sp.objectReferenceValue))
+                    GameObject prefab = obj as GameObject;
+                    foreach (var op in FindReferencesAmongPrefabChildren(node, prefab, operationStatus, prefab))
                     {
-                        // Reference found!
-                        DependencyViewerNode reference = new DependencyViewerNode(obj);
-                        DependencyViewerGraph.CreateNodeLink(reference, node);
+                        yield return op;
                     }
-
-                    ++numPropertyChecked;
-
-                    if (numPropertyChecked > NumAssetPropertiesReferencesResolvedPerFrame)
+                }
+                else
+                {
+                    foreach (var op in FindReferencesOnUnityObject(node, obj, operationStatus))
                     {
-                        operationStatus.AssetBeingProcessed = obj;
-
-                        numPropertyChecked = 0;
-                        yield return operationStatus;
+                        yield return op;
                     }
                 }
             }
         }
+    }
+
+    private IEnumerable<DependencyViewerOperation> FindReferencesOnUnityObject(
+        DependencyViewerNode node, 
+        UnityEngine.Object obj, 
+        AssetDependencyResolverOperation op, 
+        GameObject prefabRoot = null)
+    {
+        SerializedObject objSO = new SerializedObject(obj);
+        SerializedProperty sp = objSO.GetIterator();
+        while (sp.NextVisible(true))
+        {
+            if (IsPropertyADependency(sp, node))
+            {
+                // Reference found!
+                DependencyViewerNode reference = new DependencyViewerNode(obj);
+                DependencyViewerGraph.CreateNodeLink(reference, node);
+                if (prefabRoot != null)
+                {
+                    reference.SetAsPrefabContainerInfo(prefabRoot, (obj as Component).gameObject.name);
+                }
+            }
+
+            ++op.numProcessedProperties;
+
+            if (op.numProcessedProperties > NumAssetPropertiesReferencesResolvedPerFrame)
+            {
+                op.AssetBeingProcessed = obj;
+
+                op.numProcessedProperties = 0;
+                yield return op;
+            }
+        }
+    }
+
+    private IEnumerable<DependencyViewerOperation> FindReferencesAmongPrefabChildren(
+        DependencyViewerNode node, 
+        GameObject gameObject, 
+        AssetDependencyResolverOperation op,
+        GameObject prefabRoot)
+    {
+        // Find references among the components of the GameObject...
+        Component[] components = gameObject.GetComponents<Component>();
+        for (int i = 0; i < components.Length; ++i)
+        {
+            foreach (var operation in FindReferencesOnUnityObject(node, components[i], op, prefabRoot))
+            {
+                yield return operation;
+            }
+        }
+
+        // ...then make same thing on children
+        Transform trans = gameObject.transform;
+        for (int i = 0; i < trans.childCount; ++i)
+        {
+            GameObject child = trans.GetChild(i).gameObject;
+            foreach (var operation in FindReferencesAmongPrefabChildren(node, child, op, prefabRoot))
+            {
+                yield return operation;
+            }
+        }
+    }
+
+    private bool IsPropertyADependency(SerializedProperty sp, DependencyViewerNode node)
+    {
+        return sp.propertyType == SerializedPropertyType.ObjectReference &&
+                sp.objectReferenceValue == node.TargetObject &&
+                IsObjectAllowedBySettings(sp.objectReferenceValue);
     }
 
     private List<GameObject> GetAllGameObjectsFromScenes(List<Scene> scenes)

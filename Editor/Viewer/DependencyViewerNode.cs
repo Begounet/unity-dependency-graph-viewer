@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 internal class DependencyViewerNode
@@ -16,10 +17,9 @@ internal class DependencyViewerNode
                 return "(null)";
             }
 
-            string prefix = IsPrefabChild ? $"[{GameObjectNameAsPrefabChild}] " : string.Empty;
             string suffix = (_targetObject is UnityEditor.MonoScript) ? " (Script)" : string.Empty;
 
-            return $"{prefix}{_targetObject.name}{suffix}";
+            return $"{_targetObject.name}{suffix}";
         }
     }
 
@@ -30,8 +30,8 @@ internal class DependencyViewerNode
         private set { _targetObject = value; }
     }
 
-    public string GameObjectNameAsPrefabChild { get; set; }
-    public bool IsPrefabChild => !string.IsNullOrEmpty(GameObjectNameAsPrefabChild);
+    public string GameObjectNameAsPrefabChild { get; private set; }
+    public GameObject PrefabContainer { get; private set; }
 
     private Vector2 _position;
     public Vector2 Position
@@ -69,9 +69,20 @@ internal class DependencyViewerNode
         _rightInputs = new List<DependencyViewerNode>();
     }
 
+    public void SetAsPrefabContainerInfo(GameObject prefabContainer, string gameObjectName)
+    {
+        PrefabContainer = prefabContainer;
+        GameObjectNameAsPrefabChild = gameObjectName;
+    }
+
     public float GetHeight()
     {
-        return DependencyViewerGraphDrawer.NodeHeight;
+        int numAdditionalLines = 0;
+        if (PrefabContainer != null)
+        {
+            ++numAdditionalLines;
+        }
+        return DependencyViewerGraphDrawer.NodeHeight + numAdditionalLines * EditorGUIUtility.singleLineHeight;
     }
 
     public float GetWidth()

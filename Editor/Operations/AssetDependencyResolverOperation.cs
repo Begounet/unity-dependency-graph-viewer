@@ -7,6 +7,7 @@ internal class AssetDependencyResolverOperation : DependencyViewerOperation
 {
     public int numTotalAssets { get; set; }
     public int numProcessedAssets { get; set; }
+    public int numProcessedProperties { get; set; }
     public DependencyViewerNode node { get; set; }
 
     public UnityEngine.Object AssetBeingProcessed { get; set; }

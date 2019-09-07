@@ -27,11 +27,10 @@ internal class DependencyResolver_Dependencies
             {
                 UDGV.GameObjectUtility.ForeachChildrenGameObject(targetGameObject, (childGo) =>
                 {
-                    bool isPrefabChild = true;
                     components = childGo.GetComponents<Component>();
                     for (int i = 0; i < components.Length; ++i)
                     {
-                        FindDependencies(node, components[i], depth, isPrefabChild);
+                        FindDependencies(node, components[i], depth, targetGameObject);
                     }
                 });
             }
@@ -42,7 +41,7 @@ internal class DependencyResolver_Dependencies
         }
     }
 
-    private void FindDependencies(DependencyViewerNode node, UnityEngine.Object obj, int depth = 1, bool isPrefabChild = false)
+    private void FindDependencies(DependencyViewerNode node, UnityEngine.Object obj, int depth = 1, GameObject prefabRoot = null)
     {
         SerializedObject targetObjectSO = new SerializedObject(obj);
         SerializedProperty sp = targetObjectSO.GetIterator();
@@ -55,10 +54,10 @@ internal class DependencyResolver_Dependencies
                 // Dependency found!
                 DependencyViewerNode dependencyNode = new DependencyViewerNode(sp.objectReferenceValue);
                 DependencyViewerGraph.CreateNodeLink(node, dependencyNode);
-                if (isPrefabChild)
+                if (prefabRoot != null)
                 {
                     Component comp = obj as Component;
-                    dependencyNode.GameObjectNameAsPrefabChild = comp.gameObject.name;
+                    dependencyNode.SetAsPrefabContainerInfo(prefabRoot, comp.gameObject.name);
                 }
 
                 if (depth > 1)

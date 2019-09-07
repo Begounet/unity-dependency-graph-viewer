@@ -113,9 +113,27 @@ internal class DependencyViewerGraphDrawer
 
         GUILayout.BeginArea(boxInsideRect);
         {
-            EditorGUILayout.ObjectField(node.TargetObject, node.TargetObject.GetType(), false);
+            bool allowSceneObjects = false;
+            EditorGUILayout.ObjectField(node.TargetObject, node.TargetObject.GetType(), allowSceneObjects);
+
+            if (node.PrefabContainer != null)
+            {
+                DrawPrefabContainer(node);
+            }
         }
         GUILayout.EndArea();
+    }
+
+    private void DrawPrefabContainer(DependencyViewerNode node)
+    {
+        bool allowSceneObjects = false;
+        EditorGUILayout.BeginHorizontal();
+        {
+            GUIContent label = new GUIContent("Prefab", $"Prefab reference, on GameObject named '{node.GameObjectNameAsPrefabChild}'");
+            EditorGUILayout.LabelField(label, GUILayout.Width(40));
+            EditorGUILayout.ObjectField(node.PrefabContainer, typeof(GameObject), allowSceneObjects);
+        }
+        EditorGUILayout.EndHorizontal();
     }
 
     private void DrawNodeTitleBar(DependencyViewerNode node, Rect boxRect)
