@@ -34,8 +34,17 @@ internal class DependencyResolver
             FindDependencies(_graph.RefTargetNode, _settings.DependenciesDepth);
         }
 
+        foreach (var currentOperation in FindReferences())
+        {
+            yield return currentOperation;
+        }
+    }
+
+    private IEnumerable<DependencyViewerOperation> FindReferences()
+    {
         if (_settings.SceneSearchType != DependencyViewerSettings.SceneSearchMode.NoSearch)
         {
+            // Search references in scenes
             List<Scene> currentOpenedScenes = DependencyViewerUtility.GetCurrentOpenedScenes();
             if (_settings.FindReferences)
             {
@@ -49,6 +58,7 @@ internal class DependencyResolver
         bool searchOnlyInCurrentScene = (_settings.SceneSearchType == DependencyViewerSettings.SceneSearchMode.SearchOnlyInCurrentScene);
         if (_settings.FindReferences && !searchOnlyInCurrentScene)
         {
+            // Search references in assets
             foreach (var currentOperation in FindReferencesAmongAssets(_graph.RefTargetNode))
             {
                 yield return currentOperation;
@@ -134,17 +144,19 @@ internal class DependencyResolver
     
     private IEnumerable<DependencyViewerOperation> FindReferencesAmongAssets(DependencyViewerNode node)
     {
-        AssetDependencyResolverOperation operationStatus = new AssetDependencyResolverOperation();
-        operationStatus.node = node;
-
         string[] excludeFilters = _settings.ExcludeAssetFilters.Split(',');
         int numPropertyChecked = 0;
 
         var allLocalAssetPaths = from assetPath in AssetDatabase.GetAllAssetPaths()
                                  where assetPath.StartsWith("Assets/") && !IsAssetPathExcluded(assetPath, ref excludeFilters)
                                  select assetPath;
-        
-        operationStatus.numTotalAssets = allLocalAssetPaths.Count();
+
+        AssetDependencyResolverOperation operationStatus = new AssetDependencyResolverOperation
+        {
+            node = node,
+            numTotalAssets = allLocalAssetPaths.Count()
+        };
+
         foreach (string assetPath in allLocalAssetPaths)
         {
             ++operationStatus.numProcessedAssets;
@@ -245,6 +257,19 @@ internal class DependencyResolver
             {
                 FindDependencies(node, components[i], depth);
             }
+
+            if (DependencyResolverUtility.IsPrefab(node.TargetObject))
+            {
+                UDGV.GameObjectUtility.ForeachChildrenGameObject(targetGameObject, (childGo) =>
+                {
+                    bool isPrefabChild = true;
+                    components = childGo.GetComponents<Component>();
+                    for (int i = 0; i < components.Length; ++i)
+                    {
+                        FindDependencies(node, components[i], depth, isPrefabChild);
+                    }
+                });
+            }
         }
         else
         {
@@ -252,7 +277,7 @@ internal class DependencyResolver
         }
     }
 
-    private void FindDependencies(DependencyViewerNode node, UnityEngine.Object obj, int depth = 1)
+    private void FindDependencies(DependencyViewerNode node, UnityEngine.Object obj, int depth = 1, bool isPrefabChild = false)
     {
         SerializedObject targetObjectSO = new SerializedObject(obj);
         SerializedProperty sp = targetObjectSO.GetIterator();
@@ -262,8 +287,14 @@ internal class DependencyResolver
                 sp.objectReferenceValue != null &&
                 IsObjectAllowedBySettings(sp.objectReferenceValue))
             {
+                // Dependency found!
                 DependencyViewerNode dependencyNode = new DependencyViewerNode(sp.objectReferenceValue);
                 DependencyViewerGraph.CreateNodeLink(node, dependencyNode);
+                if (isPrefabChild)
+                {
+                    Component comp = obj as Component;
+                    dependencyNode.GameObjectNameAsPrefabChild = comp.gameObject.name;
+                }
 
                 if (depth > 1)
                 {

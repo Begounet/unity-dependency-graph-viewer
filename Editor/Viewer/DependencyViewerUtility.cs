@@ -34,19 +34,10 @@ internal static class DependencyViewerUtility
             callback(rootGameObject);
             if (visitChildren)
             {
-                ForeachChildrenGameObject(rootGameObject, callback);
+                UDGV.GameObjectUtility.ForeachChildrenGameObject(rootGameObject, callback);
             }
         }
     }
 
-    private static void ForeachChildrenGameObject(GameObject rootGameObject, Action<GameObject> callback)
-    {
-        Transform rootTransform = rootGameObject.transform;
-        for (int i = 0; i < rootTransform.childCount; ++i)
-        {
-            Transform childTransform = rootTransform.GetChild(i);
-            callback(childTransform.gameObject);
-            ForeachChildrenGameObject(childTransform.gameObject, callback);
-        }
-    }
+
 }

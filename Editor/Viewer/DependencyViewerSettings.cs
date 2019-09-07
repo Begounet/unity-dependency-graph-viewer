@@ -122,25 +122,25 @@ internal class DependencyViewerSettings : ScriptableObject
 
     public bool CanObjectTypeBeIncluded(UnityEngine.Object obj)
     {
-        if ((ObjectTypesFilter & ObjectType.ScriptableObject) != 0 &&
+        if ((ObjectTypesFilter & ObjectType.ScriptableObject) == 0 &&
             obj is ScriptableObject)
         {
-            return true;
+            return false;
         }
 
-        if ((ObjectTypesFilter & ObjectType.Component) != 0 &&
+        if ((ObjectTypesFilter & ObjectType.Component) == 0 &&
             obj is Component)
         {
-            return true;
+            return false;
         }
        
-        if ((ObjectTypesFilter & ObjectType.MonoScript) != 0 &&
+        if ((ObjectTypesFilter & ObjectType.MonoScript) == 0 &&
             obj is MonoScript)
         {
-            return true;
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     void OnValidate()

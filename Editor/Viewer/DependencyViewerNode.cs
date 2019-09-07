@@ -16,15 +16,13 @@ internal class DependencyViewerNode
                 return "(null)";
             }
 
-            if (_targetObject is UnityEditor.MonoScript)
-            {
-                return string.Format("{0} (Script)", _targetObject.name);
-            }
+            string prefix = IsPrefabChild ? $"[{GameObjectNameAsPrefabChild}] " : string.Empty;
+            string suffix = (_targetObject is UnityEditor.MonoScript) ? " (Script)" : string.Empty;
 
-            return _targetObject.name;
+            return $"{prefix}{_targetObject.name}{suffix}";
         }
     }
-    
+
     private UnityEngine.Object _targetObject;
     public UnityEngine.Object TargetObject
     {
@@ -32,6 +30,8 @@ internal class DependencyViewerNode
         private set { _targetObject = value; }
     }
 
+    public string GameObjectNameAsPrefabChild { get; set; }
+    public bool IsPrefabChild => !string.IsNullOrEmpty(GameObjectNameAsPrefabChild);
 
     private Vector2 _position;
     public Vector2 Position
