@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-public static class DependencyResolverUtility
+internal static class DependencyResolverUtility
 {
     public static bool IsObjectAnAsset(UnityEngine.Object obj)
     {
