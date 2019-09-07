@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-internal abstract class DependencyViewerOperation
+namespace UDGV
 {
-    public abstract string GetStatus();
+    public abstract class DependencyViewerOperation
+    {
+        public abstract string GetStatus();
+    }
 }

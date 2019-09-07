@@ -3,73 +3,76 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-internal class DependencyResolver_Dependencies
+namespace UDGV
 {
-    private DependencyViewerSettings _settings;
-
-    public DependencyResolver_Dependencies(DependencyViewerSettings settings)
+    internal class DependencyResolver_Dependencies
     {
-        _settings = settings;
-    }
+        private DependencyViewerSettings _settings;
 
-    public void FindDependencies(DependencyViewerNode node, int depth = 1)
-    {
-        if (node.TargetObject is GameObject)
+        public DependencyResolver_Dependencies(DependencyViewerSettings settings)
         {
-            GameObject targetGameObject = node.TargetObject as GameObject;
-            Component[] components = targetGameObject.GetComponents<Component>();
-            for (int i = 0; i < components.Length; ++i)
-            {
-                FindDependencies(node, components[i], depth);
-            }
+            _settings = settings;
+        }
 
-            if (DependencyResolverUtility.IsPrefab(node.TargetObject))
+        public void FindDependencies(DependencyViewerNode node, int depth = 1)
+        {
+            if (node.TargetObject is GameObject)
             {
-                UDGV.GameObjectUtility.ForeachChildrenGameObject(targetGameObject, (childGo) =>
+                GameObject targetGameObject = node.TargetObject as GameObject;
+                Component[] components = targetGameObject.GetComponents<Component>();
+                for (int i = 0; i < components.Length; ++i)
                 {
-                    components = childGo.GetComponents<Component>();
-                    for (int i = 0; i < components.Length; ++i)
+                    FindDependencies(node, components[i], depth);
+                }
+
+                if (DependencyResolverUtility.IsPrefab(node.TargetObject))
+                {
+                    UDGV.GameObjectUtility.ForeachChildrenGameObject(targetGameObject, (childGo) =>
                     {
-                        FindDependencies(node, components[i], depth, targetGameObject);
-                    }
-                });
+                        components = childGo.GetComponents<Component>();
+                        for (int i = 0; i < components.Length; ++i)
+                        {
+                            FindDependencies(node, components[i], depth, targetGameObject);
+                        }
+                    });
+                }
             }
-        }
-        else
-        {
-            FindDependencies(node, node.TargetObject, depth);
-        }
-    }
-
-    private void FindDependencies(DependencyViewerNode node, UnityEngine.Object obj, int depth = 1, GameObject prefabRoot = null)
-    {
-        SerializedObject targetObjectSO = new SerializedObject(obj);
-        SerializedProperty sp = targetObjectSO.GetIterator();
-        while (sp.NextVisible(true))
-        {
-            if (sp.propertyType == SerializedPropertyType.ObjectReference &&
-                sp.objectReferenceValue != null &&
-                IsObjectAllowedBySettings(sp.objectReferenceValue))
+            else
             {
-                // Dependency found!
-                DependencyViewerNode dependencyNode = new DependencyViewerNode(sp.objectReferenceValue);
-                DependencyViewerGraph.CreateNodeLink(node, dependencyNode);
-                if (prefabRoot != null)
-                {
-                    Component comp = obj as Component;
-                    dependencyNode.SetAsPrefabContainerInfo(prefabRoot, comp.gameObject.name);
-                }
+                FindDependencies(node, node.TargetObject, depth);
+            }
+        }
 
-                if (depth > 1)
+        private void FindDependencies(DependencyViewerNode node, UnityEngine.Object obj, int depth = 1, GameObject prefabRoot = null)
+        {
+            SerializedObject targetObjectSO = new SerializedObject(obj);
+            SerializedProperty sp = targetObjectSO.GetIterator();
+            while (sp.NextVisible(true))
+            {
+                if (sp.propertyType == SerializedPropertyType.ObjectReference &&
+                    sp.objectReferenceValue != null &&
+                    IsObjectAllowedBySettings(sp.objectReferenceValue))
                 {
-                    FindDependencies(dependencyNode, sp.objectReferenceValue, depth - 1);
+                    // Dependency found!
+                    DependencyViewerNode dependencyNode = new DependencyViewerNode(sp.objectReferenceValue);
+                    DependencyViewerGraph.CreateNodeLink(node, dependencyNode);
+                    if (prefabRoot != null)
+                    {
+                        Component comp = obj as Component;
+                        dependencyNode.SetAsPrefabContainerInfo(prefabRoot, comp.gameObject.name);
+                    }
+
+                    if (depth > 1)
+                    {
+                        FindDependencies(dependencyNode, sp.objectReferenceValue, depth - 1);
+                    }
                 }
             }
         }
-    }
 
-    private bool IsObjectAllowedBySettings(UnityEngine.Object obj)
-    {
-        return (_settings.CanObjectTypeBeIncluded(obj));
+        private bool IsObjectAllowedBySettings(UnityEngine.Object obj)
+        {
+            return (_settings.CanObjectTypeBeIncluded(obj));
+        }
     }
 }
