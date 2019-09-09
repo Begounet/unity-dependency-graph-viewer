@@ -18,6 +18,11 @@ namespace UDGV
             return IsObjectAnAsset(obj) && (obj is GameObject);
         }
 
+        public static bool IsGuidFromUnityResources(string guid)
+        {
+            return guid.StartsWith("0000");
+        }
+
         public static bool IsAssetPathExcluded(string assetPath, ref string[] excludeFilters, DependencyViewerSettings settings)
         {
             if (AssetDatabase.IsValidFolder(assetPath))

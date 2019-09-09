@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEditor;
@@ -12,7 +13,10 @@ namespace UDGV
         public long localId;
         public string sceneOwnerGuid;
 
+        // Debug
         public string PrettyName => AssetDatabase.GUIDToAssetPath(objectGuid);
+        public string[] PrettyDependencies => ArrayOfGuidToPaths(Dependencies);
+        public string[] PrettyReferences => ArrayOfGuidToPaths(References);
 
         public HashSet<string> Dependencies { get; private set; } = new HashSet<string>();
         public HashSet<string> References { get; private set; } = new HashSet<string>();
@@ -74,6 +78,18 @@ namespace UDGV
             }
 
             return false;
+        }
+
+
+        private string[] ArrayOfGuidToPaths(HashSet<string> guidSet)
+        {
+            string[] paths = new string[guidSet.Count];
+            int i = 0;
+            foreach (string guid in guidSet)
+            {
+                paths[i++] = AssetDatabase.GUIDToAssetPath(guid);
+            }
+            return paths;
         }
     }
 }

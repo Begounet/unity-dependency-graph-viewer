@@ -36,7 +36,7 @@ namespace UDGV.Tests
             Material mat0 = TestUtility.GetMaterial(0);
             Texture tex0 = TestUtility.GetTexture(0);
 
-            Check_ObjectA_HasDirectDependencyOn_ObjectB(tex0, mat0);
+            Check_ObjectA_HasDirectDependencyOn_ObjectB(mat0, tex0);
         }
 
         [Test]
@@ -60,17 +60,14 @@ namespace UDGV.Tests
 
         private void Check_ObjectA_HasDirectDependencyOn_ObjectB(UnityEngine.Object objectA, UnityEngine.Object objectB)
         {
-            GameObject prefab0 = TestUtility.GetPrefab(0);
-            SceneAsset scene0 = TestUtility.GetScene(0);
-
             DependencyCache cache = TestUtility.CreateDependencyCache();
             cache.Build();
 
             string objectAGuid = TestUtility.GetObjectGUID(objectA);
             string objectBGuid = TestUtility.GetObjectGUID(objectB);
 
-            Assert.IsTrue(cache.HasDirectDependencyOn(objectBGuid, objectAGuid));
-            Assert.IsFalse(cache.HasDependencyOn(objectAGuid, objectBGuid));
+            Assert.IsTrue(cache.HasDirectDependencyOn(objectAGuid, objectBGuid));
+            Assert.IsFalse(cache.HasDependencyOn(objectBGuid, objectAGuid));
         }
     }
 }

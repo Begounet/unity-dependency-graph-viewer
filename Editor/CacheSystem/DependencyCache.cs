@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -32,7 +34,7 @@ namespace UDGV
         public void Build()
         {
             var it = BuildAsync().GetEnumerator();
-            while (it.MoveNext());
+            while (it.MoveNext()) ;
         }
 
         public IEnumerable<CacheBuildOperation> BuildAsync()
@@ -62,12 +64,20 @@ namespace UDGV
                 // If obj is a prefab...
                 if (obj is GameObject)
                 {
-
+                    GameObject prefab = obj as GameObject;
+                    foreach (var op in FindDependencies(newData, prefab, operationStatus))
+                    {
+                        yield return op;
+                    }
                 }
                 // ... else if obj is a scene...
                 else if (obj is SceneAsset)
                 {
-
+                    SceneAsset scene = obj as SceneAsset;
+                    foreach (var op in FindDependencies(newData, scene, operationStatus))
+                    {
+                        yield return op;
+                    }
                 }
                 // ... else make a default search
                 else
@@ -91,8 +101,7 @@ namespace UDGV
                     // Found dependency!
                     if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sp.objectReferenceValue, out string guid, out long localId))
                     {
-                        bool isUnityLibraryResources = guid.StartsWith("0000");
-                        if (!isUnityLibraryResources)
+                        if (!DependencyResolverUtility.IsGuidFromUnityResources(guid))
                         {
                             DependencyData dependency = _dataHandler.CreateOrGetDependencyDataFromGuid(guid);
                             dependency.localId = localId;
@@ -109,6 +118,55 @@ namespace UDGV
                     yield return operation;
                 }
             }
+        }
+
+        private IEnumerable<CacheBuildOperation> FindDependencies(DependencyData data, IEnumerable<GameObject> gameObjects, CacheBuildOperation operation)
+        {
+            foreach (GameObject gameObject in gameObjects)
+            { 
+                foreach (var op in FindDependencies(data, gameObject, operation)) yield return op;
+            }
+        }
+
+        private IEnumerable<CacheBuildOperation> FindDependencies(DependencyData data, GameObject gameObject, CacheBuildOperation operation)
+        {
+            // Search among *all* the component on the GameObject and the children ones
+            Component[] targetObjectComponents = gameObject.GetComponents<Component>();
+            Component[] childrenComponents = gameObject.GetComponentsInChildren<Component>(true);
+
+            foreach (var op in FindDependencies(data, targetObjectComponents, operation)) yield return op;
+            foreach (var op in FindDependencies(data, childrenComponents, operation)) yield return op;
+        }
+
+        private IEnumerable<CacheBuildOperation> FindDependencies(DependencyData data, IEnumerable<Component> components, CacheBuildOperation operation)
+        {
+            foreach (Component component in components)
+            {
+                foreach (var op in FindDependencies(data, component, operation)) yield return op;
+            }
+        }
+
+        private IEnumerable<CacheBuildOperation> FindDependencies(DependencyData data, SceneAsset scene, CacheBuildOperation operation)
+        {
+            string scenePath = AssetDatabase.GetAssetPath(scene);
+            string sceneContent = File.ReadAllText(scenePath);
+
+            // Find all references to guids, because that's all that interest us. Don't need to load the scene
+            Regex guidRegex = new Regex(@"guid: (?<guid>[a-f\d]*)[,|}]");
+            MatchCollection matches = guidRegex.Matches(sceneContent);
+            for (int i = 0; i < matches.Count; ++i)
+            {
+                // The group that interest us...
+                Group group = matches[i].Groups[1];
+                string guid = group.Value;
+                if (!DependencyResolverUtility.IsGuidFromUnityResources(guid))
+                {
+                    DependencyData dependency = _dataHandler.CreateOrGetDependencyDataFromGuid(guid);
+                    DependencyData.Connect(data, dependency);
+                }
+            }
+
+            yield return operation;
         }
 
         public void DumpCache()
