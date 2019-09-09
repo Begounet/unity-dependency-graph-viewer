@@ -37,5 +37,43 @@ namespace UDGV
         {
             return Dependencies.Contains(otherObjectGuid);
         }
+
+        /// <summary>
+        /// Find if otherObjectGuid is a dependency of the current object.
+        /// </summary>
+        /// <param name="dataHandler">Data handled by the cache</param>
+        /// <param name="otherObjectGuid">Other object Guid</param>
+        /// <param name="depth">How deep the search should go. -1 for infinite</param>
+        internal bool HasDependencyOn(DependencyCacheDataHandler dataHandler, string otherObjectGuid, int depth)
+        {
+            // Find among dependencies directly
+            foreach (var dependency in Dependencies)
+            {
+                if (dependency == otherObjectGuid)
+                {
+                    return true;
+                }
+            }
+
+            if (depth != 0)
+            {
+                --depth;
+
+                // For each dependency, find among its dependencies too
+                foreach (var dependency in Dependencies)
+                {
+                    if (dataHandler.TryGetValue(dependency, out DependencyData dependencyData))
+                    {
+                        bool hasDependency = dependencyData.HasDependencyOn(dataHandler, otherObjectGuid, depth);
+                        if (hasDependency)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
     }
 }

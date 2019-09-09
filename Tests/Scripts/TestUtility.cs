@@ -14,9 +14,13 @@ namespace UDGV.Tests
         private const string TestAssetDirectoryName = "Assets";
         private const string TestMaterialsDirectoryName = "Materials";
         private const string TestTexturesDirectoryName = "Textures";
+        private const string TestPrefabsDirectoryName = "Prefabs";
+        private const string TestScenesDirectoryName = "Scenes";
 
         private const string TestMaterialPrefix = "Mat";
         private const string TestTexturePrefix = "Texture";
+        private const string TestPrefabPrefix = "Prefab";
+        private const string TestScenePrefix = "Scene";
 
         public static string TestDirectoryPath
         {
@@ -28,9 +32,13 @@ namespace UDGV.Tests
             }
         }
 
-        public static string TestAssetDirectoryPath => CombinePath(TestDirectoryPath, TestAssetDirectoryName);
+        public static string TestAssetDirectoryPath     => CombinePath(TestDirectoryPath, TestAssetDirectoryName);
+
         public static string TestMaterialsDirectoryPath => CombinePath(TestAssetDirectoryPath, TestMaterialsDirectoryName);
-        public static string TestTexturesDirectoryPath => CombinePath(TestAssetDirectoryPath, TestTexturesDirectoryName);
+        public static string TestTexturesDirectoryPath  => CombinePath(TestAssetDirectoryPath, TestTexturesDirectoryName);
+        public static string TestPrefabDirectoryPath    => CombinePath(TestAssetDirectoryPath, TestPrefabsDirectoryName);
+        public static string TestSceneDirectoryPath     => CombinePath(TestAssetDirectoryPath, TestScenesDirectoryName);
+
 
         public static string GetMaterialPath(int id)
         {
@@ -42,6 +50,17 @@ namespace UDGV.Tests
             return CombinePath(TestTexturesDirectoryPath, TestTexturePrefix + id);
         }
 
+        public static string GetPrefabPath(int id)
+        {
+            return CombinePath(TestPrefabDirectoryPath, TestPrefabPrefix + id);
+        }
+
+        public static string GetScenePath(int id)
+        {
+            return CombinePath(TestSceneDirectoryPath, TestScenePrefix + id);
+        }
+
+
         public static Material GetMaterial(int id)
         {
             string path = GetAssetPath(TestMaterialsDirectoryPath, TestMaterialPrefix, id);
@@ -52,6 +71,18 @@ namespace UDGV.Tests
         {
             string path = GetAssetPath(TestTexturesDirectoryPath, TestTexturePrefix, id);
             return AssetDatabase.LoadAssetAtPath<Texture>(path);
+        }
+
+        public static GameObject GetPrefab(int id)
+        {
+            string path = GetAssetPath(TestPrefabDirectoryPath, TestPrefabPrefix, id);
+            return AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        }
+
+        public static SceneAsset GetScene(int id)
+        {
+            string path = GetAssetPath(TestSceneDirectoryPath, TestScenePrefix, id);
+            return AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
         }
 
         public static bool IsTextureReferencedByMaterial(Texture texture, Material material)

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace UDGV
 {
-    internal static class DependencyResolverUtility
+    public static class DependencyResolverUtility
     {
         public static bool IsObjectAnAsset(UnityEngine.Object obj)
         {
@@ -54,6 +54,29 @@ namespace UDGV
                 return !isAssetAmongReferencesDirectory;
             }
 
+            return false;
+        }
+
+        public static bool IsPropertyADependency(DependencyViewerSettings settings, SerializedProperty sp)
+        {
+            return sp.propertyType == SerializedPropertyType.ObjectReference &&
+                    sp.objectReferenceValue != null &&
+                    settings.CanObjectTypeBeIncluded(sp.objectReferenceValue);
+        }
+
+        public static bool IsObjectReferencingOtherObject(UnityEngine.Object mainObject, UnityEngine.Object otherObject, DependencyViewerSettings settings)
+        {
+            SerializedObject mainObjectSO = new SerializedObject(mainObject);
+            SerializedProperty mainObjectSP = mainObjectSO.GetIterator();
+            while (mainObjectSP.NextVisible(true))
+            {
+                if (mainObjectSP.propertyType == SerializedPropertyType.ObjectReference &&
+                    mainObjectSP.objectReferenceValue == otherObject &&
+                    (settings?.CanObjectTypeBeIncluded(otherObject) ?? true))
+                {
+                    return true;
+                }
+            }
             return false;
         }
     }

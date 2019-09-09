@@ -11,10 +11,11 @@ namespace UDGV
         private const int NumPropertiesToProceedByFrame = 100;
 
         private DependencyViewerSettings _settings;
-        private Dictionary<string, DependencyData> _data;
+        private DependencyCacheDataHandler _dataHandler;
 
         public DependencyCache(DependencyViewerSettings settings)
         {
+            _dataHandler = new DependencyCacheDataHandler();
             _settings = settings;
         }
 
@@ -25,7 +26,7 @@ namespace UDGV
 
         public void Clear()
         {
-
+            _dataHandler.Clear();
         }
 
         public void Build()
@@ -36,7 +37,7 @@ namespace UDGV
 
         public IEnumerable<CacheBuildOperation> BuildAsync()
         {
-            _data = new Dictionary<string, DependencyData>();
+            _dataHandler.Clear();
 
             string[] allAssetsPath = AssetDatabase.GetAllAssetPaths();
             string[] excludeFilters = _settings.ExcludeAssetFilters.Split(',');
@@ -53,7 +54,7 @@ namespace UDGV
             foreach (string path in allLocalAssetPaths)
             {
                 string objectGUID = AssetDatabase.AssetPathToGUID(path);
-                DependencyData newData = CreateOrGetDependencyDataFromGUID(objectGUID);
+                DependencyData newData = _dataHandler.CreateOrGetDependencyDataFromGuid(objectGUID);
 
                 UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
                 operationStatus.AssetBeingProcessed = obj;
@@ -85,7 +86,7 @@ namespace UDGV
             SerializedProperty sp = so.GetIterator();
             while (sp.NextVisible(true))
             {
-                if (IsPropertyADependency(sp))
+                if (DependencyResolverUtility.IsPropertyADependency(_settings, sp))
                 {
                     // Found dependency!
                     if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sp.objectReferenceValue, out string guid, out long localId))
@@ -93,7 +94,7 @@ namespace UDGV
                         bool isUnityLibraryResources = guid.StartsWith("0000");
                         if (!isUnityLibraryResources)
                         {
-                            DependencyData dependency = CreateOrGetDependencyDataFromGUID(guid);
+                            DependencyData dependency = _dataHandler.CreateOrGetDependencyDataFromGuid(guid);
                             dependency.localId = localId;
                             DependencyData.Connect(data, dependency);
                         }
@@ -110,31 +111,9 @@ namespace UDGV
             }
         }
 
-        private DependencyData CreateOrGetDependencyDataFromGUID(string guid)
-        {
-            if (_data.TryGetValue(guid, out DependencyData data))
-            {
-                return data;
-            }
-
-            DependencyData newData = new DependencyData()
-            {
-                objectGuid = guid
-            };
-            _data.Add(guid, newData);
-            return newData;
-        }
-
-        private bool IsPropertyADependency(SerializedProperty sp)
-        {
-            return sp.propertyType == SerializedPropertyType.ObjectReference &&
-                    sp.objectReferenceValue != null &&
-                    _settings.CanObjectTypeBeIncluded(sp.objectReferenceValue);
-        }
-
         public void DumpCache()
         {
-            foreach (DependencyData data in _data.Values)
+            foreach (DependencyData data in _dataHandler.GetDependenciesData())
             {
                 string path = AssetDatabase.GUIDToAssetPath(data.objectGuid);
                 UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
@@ -160,7 +139,21 @@ namespace UDGV
 
         public bool TryGetDependencyDataForAsset(string guid, out DependencyData dependencyData)
         {
-            return _data.TryGetValue(guid, out dependencyData);
+            return _dataHandler.TryGetValue(guid, out dependencyData);
+        }
+
+        public bool HasDirectDependencyOn(string mainObjectGuid, string otherObjectGuid)
+        {
+            return HasDependencyOn(mainObjectGuid, otherObjectGuid, 1);
+        }
+
+        public bool HasDependencyOn(string mainObjectGuid, string otherObjectGuid, int depth = -1)
+        {
+            if (TryGetDependencyDataForAsset(mainObjectGuid, out DependencyData dependencyData))
+            {
+                return dependencyData.HasDependencyOn(_dataHandler, otherObjectGuid, depth);
+            }
+            return false;
         }
     }
 }

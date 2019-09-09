@@ -36,7 +36,7 @@ namespace UDGV.Tests
             Material mat0 = TestUtility.GetMaterial(0);
             Texture tex0 = TestUtility.GetTexture(0);
 
-            AssertUtility.IsTextureReferencedByMaterial(tex0, mat0);
+            AssertUtility.IsObjectDirectlyReferencingOtherObject(tex0, mat0);
 
             DependencyCache cache = TestUtility.CreateDependencyCache();
             cache.Build();
@@ -44,14 +44,40 @@ namespace UDGV.Tests
             string mat0Guid = TestUtility.GetObjectGUID(mat0);
             string tex0Guid = TestUtility.GetObjectGUID(tex0);
 
-            Assert.IsTrue(cache.TryGetDependencyDataForAsset(mat0Guid, out DependencyData mat0dd));
-            Assert.IsTrue(cache.TryGetDependencyDataForAsset(tex0Guid, out DependencyData tex0dd));
+            Assert.IsTrue(cache.HasDirectDependencyOn(mat0Guid, tex0Guid));
+            Assert.IsFalse(cache.HasDependencyOn(tex0Guid, mat0Guid));
+        }
 
-            Assert.IsTrue(mat0dd.HasDependencyOn(tex0Guid));
-            Assert.IsTrue(tex0dd.IsReferencedBy(mat0Guid));
+        [Test]
+        public void Check_Prefab0_HasDependencyOn_Mat0()
+        {
+            GameObject prefab0 = TestUtility.GetPrefab(0);
+            Material mat0 = TestUtility.GetMaterial(0);
 
-            Assert.IsFalse(mat0dd.IsReferencedBy(tex0Guid));
-            Assert.IsFalse(tex0dd.HasDependencyOn(mat0Guid));
+            DependencyCache cache = TestUtility.CreateDependencyCache();
+            cache.Build();
+
+            string mat0Guid = TestUtility.GetObjectGUID(mat0);
+            string prefab0Guid = TestUtility.GetObjectGUID(prefab0);
+
+            Assert.IsTrue(cache.HasDirectDependencyOn(prefab0Guid, mat0Guid));
+            Assert.IsFalse(cache.HasDependencyOn(mat0Guid, prefab0Guid));
+        }
+
+        [Test]
+        public void Check_Scene0_HasDependencyOn_Prefab0()
+        {
+            GameObject prefab0 = TestUtility.GetPrefab(0);
+            SceneAsset scene0 = TestUtility.GetScene(0);
+
+            DependencyCache cache = TestUtility.CreateDependencyCache();
+            cache.Build();
+
+            string prefab0Guid = TestUtility.GetObjectGUID(prefab0);
+            string scene0Guid = TestUtility.GetObjectGUID(scene0);
+
+            Assert.IsTrue(cache.HasDirectDependencyOn(scene0Guid, prefab0Guid));
+            Assert.IsFalse(cache.HasDependencyOn(prefab0Guid, scene0Guid));
         }
     }
 }
