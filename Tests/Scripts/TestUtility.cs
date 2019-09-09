@@ -128,5 +128,20 @@ namespace UDGV.Tests
             Assert.IsNotEmpty(assets, $"Cannot find asset '{prefix}{id}' at path {directoryPath}'");
             return AssetDatabase.GUIDToAssetPath(assets[0]);
         }
+        
+        private static void Check_ObjectA_HasDirectDependencyOn_ObjectB(UnityEngine.Object objectA, UnityEngine.Object objectB)
+        {
+            GameObject prefab0 = TestUtility.GetPrefab(0);
+            SceneAsset scene0 = TestUtility.GetScene(0);
+
+            DependencyCache cache = TestUtility.CreateDependencyCache();
+            cache.Build();
+
+            string objectAGuid = TestUtility.GetObjectGUID(objectA);
+            string objectBGuid = TestUtility.GetObjectGUID(objectB);
+
+            Assert.IsTrue(cache.HasDirectDependencyOn(objectBGuid, objectAGuid));
+            Assert.IsFalse(cache.HasDependencyOn(objectAGuid, objectBGuid));
+        }
     }
 }
