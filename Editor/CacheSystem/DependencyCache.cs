@@ -28,7 +28,13 @@ namespace UDGV
 
         }
 
-        public IEnumerable<CacheBuildOperation> Build()
+        public void Build()
+        {
+            var it = BuildAsync().GetEnumerator();
+            while (it.MoveNext());
+        }
+
+        public IEnumerable<CacheBuildOperation> BuildAsync()
         {
             _data = new Dictionary<string, DependencyData>();
 
@@ -113,7 +119,7 @@ namespace UDGV
 
             DependencyData newData = new DependencyData()
             {
-                objectGUID = guid
+                objectGuid = guid
             };
             _data.Add(guid, newData);
             return newData;
@@ -130,7 +136,7 @@ namespace UDGV
         {
             foreach (DependencyData data in _data.Values)
             {
-                string path = AssetDatabase.GUIDToAssetPath(data.objectGUID);
+                string path = AssetDatabase.GUIDToAssetPath(data.objectGuid);
                 UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
                 Debug.Log($"== {obj.name} ({path})");
 
@@ -150,6 +156,11 @@ namespace UDGV
                 UnityEngine.Object obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
                 Debug.Log($"{obj?.name ?? "null"} ({path})");
             }
+        }
+
+        public bool TryGetDependencyDataForAsset(string guid, out DependencyData dependencyData)
+        {
+            return _data.TryGetValue(guid, out dependencyData);
         }
     }
 }
