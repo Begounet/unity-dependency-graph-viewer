@@ -8,8 +8,8 @@ Visual graph in editor to see dependencies/references of an asset on Unity (base
   * Find references/dependencies on prefabs: OK
   * Find references/dependencies on scenes (without loading the scene): OK
   * Build all sync and async (with operation status): OK
-  * Build one Object only: In Progress
-  * Watch file changes and rebuild only these files: Waiting
+  * Build one Object only: OK
+  * Watch file changes and rebuild only these files: In Progress
   * Save/load of cache (JSON into EditorPrefs): Waiting
   * Put namespace everywhere: Waiting
   * Couple cache system with the node tree: Waiting
