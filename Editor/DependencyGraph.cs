@@ -192,11 +192,11 @@ internal class DependencyViewerGraph
 
         if (children.Count > 1)
         {
-            float distanceBetweenFirstAndLast = _refTargetNode.GetLastChild(side).Position.y - _refTargetNode.GetFirstChild(side).Position.y;
+            float size = _refTargetNode.GetLastChild(side).Position.y - _refTargetNode.GetFirstChild(side).Position.y;
             float actualY = _refTargetNode.GetFirstChild(side).Position.y;
-            float desiredY = -distanceBetweenFirstAndLast / 2;
+            float desiredY = _refTargetNode.Position.y - size / 2.0f;
             float shiftY = desiredY - actualY;
-            
+
             for (int i = 0; i < children.Count; ++i)
             {
                 children[i].ForeachChildrenRecursively(side, (node) => node.SetPositionY(node.Position.y + shiftY));
