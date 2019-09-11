@@ -21,10 +21,31 @@ namespace UDGV
         public HashSet<string> Dependencies { get; private set; } = new HashSet<string>();
         public HashSet<string> References { get; private set; } = new HashSet<string>();
 
-        public static void Connect(DependencyData reference, DependencyData dependency)
+
+        internal static void Connect(DependencyData reference, DependencyData dependency)
         {
             reference.Dependencies.Add(dependency.objectGuid);
             dependency.References.Add(reference.objectGuid);
+        }
+
+        internal static void Disconnect(DependencyData reference, DependencyData dependency)
+        {
+            reference.Dependencies.Remove(dependency.objectGuid);
+            dependency.References.Remove(reference.objectGuid);
+        }
+
+        internal void DisconnectAllDependencies(DependencyCacheDataHandler dataHandler)
+        {
+            DependencyData dependencyData = null;
+
+            var it = Dependencies.GetEnumerator();
+            while (it.MoveNext())
+            {
+                if (dataHandler.TryGetValue(it.Current, out dependencyData))
+                {
+                    Disconnect(this, dependencyData);
+                }
+            }
         }
 
         public override string ToString()

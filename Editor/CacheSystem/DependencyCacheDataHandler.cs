@@ -13,6 +13,11 @@ namespace UDGV
             _data.Clear();
         }
 
+        public bool Clear(string key)
+        {
+            return _data.Remove(key);
+        }
+
         public bool TryGetValue(string key, out DependencyData dependencyData)
         {
             return _data.TryGetValue(key, out dependencyData);
