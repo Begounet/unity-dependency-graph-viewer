@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using UDGV.CacheSystem;
 using UnityEditor;
 using UnityEngine;
 
@@ -40,9 +41,14 @@ namespace UDGV.Tests
         public static string TestSceneDirectoryPath     => CombinePath(TestAssetDirectoryPath, TestScenesDirectoryName);
 
 
-        public static string GetMaterialPath(int id)
+        public static string GetMaterialPath(int id, bool withExtension = false)
         {
-            return CombinePath(TestMaterialsDirectoryPath, TestMaterialPrefix + id);
+            string path = CombinePath(TestMaterialsDirectoryPath, TestMaterialPrefix + id);
+            if (withExtension)
+            {
+                path += ".mat";
+            }
+            return path;
         }
 
         public static string GetTexturePath(int id)
