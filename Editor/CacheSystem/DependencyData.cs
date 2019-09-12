@@ -5,7 +5,7 @@ using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
 
-namespace UDGV
+namespace UDGV.CacheSystem
 {
     public class DependencyData
     {

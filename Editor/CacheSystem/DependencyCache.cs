@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
-namespace UDGV
+namespace UDGV.CacheSystem
 {
     public class DependencyCache
     {

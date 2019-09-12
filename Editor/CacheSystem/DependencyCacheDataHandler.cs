@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace UDGV
+namespace UDGV.CacheSystem
 {
     internal class DependencyCacheDataHandler
     {

@@ -5,7 +5,7 @@ using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
 
-namespace UDGV
+namespace UDGV.CacheSystem
 {
     internal class DependencyCacheResolver
     {

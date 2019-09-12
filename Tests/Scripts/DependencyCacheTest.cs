@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using UDGV;
+using UDGV.CacheSystem;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
