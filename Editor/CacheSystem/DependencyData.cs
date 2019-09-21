@@ -38,12 +38,30 @@ namespace UDGV.CacheSystem
         {
             DependencyData dependencyData = null;
 
-            var it = Dependencies.GetEnumerator();
+            // Use a copy because the References property will be changed during the iteration
+            HashSet<string> dependenciesCopy = new HashSet<string>(Dependencies);
+            var it = dependenciesCopy.GetEnumerator();
             while (it.MoveNext())
             {
                 if (dataHandler.TryGetValue(it.Current, out dependencyData))
                 {
                     Disconnect(this, dependencyData);
+                }
+            }
+        }
+
+        internal void DisconnectFromAllReferences(DependencyCacheDataHandler dataHandler)
+        {
+            DependencyData dependencyData = null;
+
+            // Use a copy because the References property will be changed during the iteration
+            HashSet<string> referencesCopy = new HashSet<string>(References);
+            var it = referencesCopy.GetEnumerator();
+            while (it.MoveNext())
+            {
+                if (dataHandler.TryGetValue(it.Current, out dependencyData))
+                {
+                    Disconnect(dependencyData, this);
                 }
             }
         }

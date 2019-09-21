@@ -14,6 +14,19 @@ namespace UDGV.Tests
 {
     public class DependencyCacheTest
     {
+        [SetUp]
+        public void Setup()
+        {
+            DependencyCacheManager.IsRunning = false;
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            DependencyCacheManager.IsRunning = true;
+        }
+
+
         [UnityTest]
         public IEnumerator BuildCache()
         {

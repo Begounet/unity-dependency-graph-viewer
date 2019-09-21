@@ -99,6 +99,19 @@ namespace UDGV
             set { _objectTypesFilter = value; }
         }
 
+        [System.Serializable]
+        internal class DeveloperSettings
+        {
+            public bool IsDependencyCacheManagerActive { get; set; } = true;
+
+            [SerializeField]
+            private bool _isVerbose = true;
+            public bool IsVerbose => _isVerbose;
+        }
+
+        internal DeveloperSettings _developer = new DependencyViewerSettings.DeveloperSettings();
+        internal DeveloperSettings Developer => _developer;
+
 
         public static DependencyViewerSettings Create()
         {

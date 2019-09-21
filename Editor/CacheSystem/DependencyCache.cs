@@ -89,12 +89,16 @@ namespace UDGV.CacheSystem
             {
                 foreach (var op in RebuildDependenciesAsync(path, operationStatus)) yield return op;
             }
+
+            Utility.Logger.Log($"Cache system build completed");
         }
 
         public IEnumerable<CacheBuildOperation> RebuildDependenciesAsync(string assetPath)
         {
             CacheBuildOperation operationStatus = new CacheBuildOperation { numTotalAssets = 1 };
             foreach (var op in RebuildDependenciesAsync(assetPath, operationStatus)) yield return op;
+
+            Utility.Logger.Log($"Dependencies rebuild for '{assetPath}'");
         }
 
         private IEnumerable<CacheBuildOperation> RebuildDependenciesAsync(string assetPath, CacheBuildOperation operationStatus = null)
@@ -134,6 +138,17 @@ namespace UDGV.CacheSystem
                 {
                     yield return op;
                 }
+            }
+        }
+
+        public void DeleteAssetFromCache(string assetPath)
+        {
+            string guid = AssetDatabase.AssetPathToGUID(assetPath);
+            if (TryGetDependencyDataForAsset(guid, out DependencyData dependencyData))
+            {
+                dependencyData.DisconnectFromAllReferences(_dataHandler);
+                dependencyData.DisconnectAllDependencies(_dataHandler);
+                _dataHandler.Clear(guid);
             }
         }
 

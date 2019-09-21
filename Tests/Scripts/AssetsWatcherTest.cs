@@ -18,7 +18,21 @@ namespace UDGV.Tests
         [SetUp]
         public void Setup()
         {
+            DependencyCacheManager.IsRunning = false;
+
             assetsWatcher = new AssetsWatcher();
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            for (int i = 0; i < assetsToDeleteAtTeardown.Count; ++i)
+            {
+                string path = AssetDatabase.GetAssetPath(assetsToDeleteAtTeardown[i]);
+                AssetDatabase.DeleteAsset(path);
+            }
+
+            DependencyCacheManager.IsRunning = true;
         }
 
         [Test]
@@ -75,16 +89,6 @@ namespace UDGV.Tests
 
             Assert.IsTrue(isModificationDetected);
             Assert.AreEqual(materialFilePath, deletedAssetFilePath, $"Deleted asset path '{deletedAssetFilePath}' should be '{materialFilePath}'");
-        }
-
-        [TearDown]
-        public void Teardown()
-        {
-            for (int i = 0; i < assetsToDeleteAtTeardown.Count; ++i)
-            {
-                string path = AssetDatabase.GetAssetPath(assetsToDeleteAtTeardown[i]);
-                AssetDatabase.DeleteAsset(path);
-            }
         }
     }
 }
