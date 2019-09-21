@@ -107,9 +107,14 @@ namespace UDGV
             [SerializeField]
             private bool _isVerbose = true;
             public bool IsVerbose => _isVerbose;
+
+            [SerializeField]
+            private string _editorPrefCacheSaveKey = "UDGVCacheSave";
+            public string EditorPrefCacheSaveKey => _editorPrefCacheSaveKey;
         }
 
-        internal DeveloperSettings _developer = new DependencyViewerSettings.DeveloperSettings();
+        [SerializeField]
+        internal DeveloperSettings _developer = null;
         internal DeveloperSettings Developer => _developer;
 
 

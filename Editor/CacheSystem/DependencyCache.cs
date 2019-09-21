@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -23,9 +24,22 @@ namespace UDGV.CacheSystem
             _dependencyResolver = new DependencyCacheResolver(_dataHandler, _settings);
         }
 
+        public void Save()
+        {
+            string data = JsonConvert.SerializeObject(_dataHandler);
+            EditorPrefs.SetString(_settings.Developer.EditorPrefCacheSaveKey, data);
+            Utility.Logger.Log($"Dependency cache saved : {data}");
+        }
+
         public void Load()
         {
-
+            string cacheSaveKey = _settings.Developer.EditorPrefCacheSaveKey;
+            if (EditorPrefs.HasKey(cacheSaveKey))
+            {
+                string jsonData = EditorPrefs.GetString(cacheSaveKey);
+                _dataHandler = JsonConvert.DeserializeObject<DependencyCacheDataHandler>(jsonData);
+            }
+            Utility.Logger.Log("Dependency cache loaded");
         }
 
         public void Clear()
@@ -169,6 +183,20 @@ namespace UDGV.CacheSystem
                 return dependencyData.HasDependencyOn(_dataHandler, otherObjectGuid, depth);
             }
             return false;
+        }
+
+        public bool IsAssetInCache(UnityEngine.Object obj)
+        {
+            if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out string guid, out long localId))
+            {
+                return IsAssetInCache(guid);
+            }
+            throw new Exception($"Cannot get guid for object '{obj}'");
+        }
+
+        public bool IsAssetInCache(string guid)
+        {
+            return _dataHandler.Contains(guid);
         }
 
 

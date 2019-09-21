@@ -115,6 +115,50 @@ namespace UDGV.Tests
             Assert.IsTrue(cache.HasDependencyOn(mat0Guid, tex0Guid)); // Dependency should be fixed again
         }
 
+        [Test]
+        public void Serialization_Asset()
+        {
+            DependencyCache cache = TestUtility.CreateDependencyCache();
+
+            Material mat0 = TestUtility.GetMaterial(0);
+            cache.RebuildDependencies(mat0);
+
+            string mat0Guid = TestUtility.GetObjectGUID(mat0);
+            Assert.IsTrue(cache.IsAssetInCache(mat0Guid));
+
+            cache.Save();
+            cache.Clear();
+            Assert.IsTrue(!cache.IsAssetInCache(mat0Guid), "The cache should be empty!");
+
+            cache.Load();
+            Assert.IsTrue(cache.IsAssetInCache(mat0Guid));
+        }
+
+        [Test]
+        public void Serialization_AssetDependencies()
+        {
+            DependencyCache cache = TestUtility.CreateDependencyCache();
+
+            Material mat0 = TestUtility.GetMaterial(0);
+            Texture tex0 = TestUtility.GetTexture(0);
+            cache.RebuildDependencies(mat0);
+
+            string mat0Guid = TestUtility.GetObjectGUID(mat0);
+            string tex0Guid = TestUtility.GetObjectGUID(tex0);
+
+            Assert.IsTrue(cache.IsAssetInCache(mat0Guid));
+            Assert.IsTrue(cache.IsAssetInCache(tex0Guid));
+            Assert.IsTrue(cache.HasDirectDependencyOn(mat0Guid, tex0Guid));
+
+            cache.Save();
+            cache.Clear();
+            Assert.IsTrue(!cache.IsAssetInCache(mat0Guid), "The cache should be empty!");
+
+            cache.Load();
+            Assert.IsTrue(cache.IsAssetInCache(mat0Guid));
+            Assert.IsTrue(cache.HasDirectDependencyOn(mat0Guid, tex0Guid));
+        }
+
 
         private DependencyCache Check_ObjectA_HasDirectDependencyOn_ObjectB(UnityEngine.Object objectA, UnityEngine.Object objectB, DependencyCache cache = null)
         {

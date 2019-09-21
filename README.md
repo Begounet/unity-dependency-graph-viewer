@@ -9,9 +9,9 @@ Visual graph in editor to see dependencies/references of an asset on Unity (base
   * Find references/dependencies on scenes (without loading the scene): OK
   * Build all sync and async (with operation status): OK
   * Build one Object only: OK
-  * Watch file changes and rebuild only these files: In Progress
-  * Save/load of cache (JSON into EditorPrefs): Waiting
-  * Put namespace everywhere: Waiting
+  * Watch file changes and rebuild only these files: OK
+  * Save/load of cache (JSON into EditorPrefs): OK
+  * Put namespace everywhere: In Progress
   * Couple cache system with the node tree: Waiting
   * Remove old system: Waiting
   * Optimization of Unity's common assets (not browse all properties): Waiting
@@ -22,6 +22,12 @@ Visual graph in editor to see dependencies/references of an asset on Unity (base
 * UnityEvent Method Search:
 
   * Find GameObjects using UnityEvents from a method name: Waiting
+
+* Find GameObject reference in the scene
+
+  * Among other GameObjects
+  * Among timeline
+  * Among Animator in parents
 
   
 

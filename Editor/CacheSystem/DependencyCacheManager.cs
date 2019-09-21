@@ -27,9 +27,10 @@ namespace UDGV.CacheSystem
         static void StartUp()
         {
             Instance = new DependencyCacheManager();
+            Instance.Initialize();
         }
         
-        private DependencyCacheManager()
+        private void Initialize()
         {
             if (_settings == null)
             {
@@ -38,6 +39,8 @@ namespace UDGV.CacheSystem
             }
 
             _cache = new DependencyCache(_settings);
+            _cache.Load();
+
             _assetsWatcher = new AssetsWatcher();
             _assetsWatcher.OnAssetChanged += OnAssetChanged;
             _assetsWatcher.OnAssetDeleted += OnAssetDeleted;
@@ -53,6 +56,7 @@ namespace UDGV.CacheSystem
             if (!IsRunning) return;
 
             _cache.DeleteAssetFromCache(assetPath);
+            _cache.Save();
         }
 
         private void OnAssetChanged(string assetPath)
@@ -74,7 +78,15 @@ namespace UDGV.CacheSystem
         {
             // Update all cache build operations and
             // remove the ones that are completed
-            _currentCacheBuildOperations.RemoveAll((op) => !op.MoveNext());
+            _currentCacheBuildOperations.RemoveAll((op) =>
+            {
+                bool isCompleted = !op.MoveNext();
+                if (isCompleted)
+                {
+                    _cache.Save();
+                }
+                return isCompleted;
+            });
         }
     }
 }

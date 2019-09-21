@@ -1,25 +1,29 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.Serialization;
 using UnityEditor;
 using UnityEngine;
 
 namespace UDGV.CacheSystem
 {
+    [System.Serializable]
     public class DependencyData
     {
         public string objectGuid;
         public long localId;
         public string sceneOwnerGuid;
 
-        // Debug
-        public string PrettyName => AssetDatabase.GUIDToAssetPath(objectGuid);
-        public string[] PrettyDependencies => ArrayOfGuidToPaths(Dependencies);
-        public string[] PrettyReferences => ArrayOfGuidToPaths(References);
-
         public HashSet<string> Dependencies { get; private set; } = new HashSet<string>();
         public HashSet<string> References { get; private set; } = new HashSet<string>();
+
+
+        // Debug
+        [JsonIgnore] public string PrettyName => AssetDatabase.GUIDToAssetPath(objectGuid);
+        [JsonIgnore] public string[] PrettyDependencies => ArrayOfGuidToPaths(Dependencies);
+        [JsonIgnore] public string[] PrettyReferences => ArrayOfGuidToPaths(References);
 
 
         internal static void Connect(DependencyData reference, DependencyData dependency)

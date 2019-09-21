@@ -1,11 +1,16 @@
-﻿using System.Collections;
+﻿using Newtonsoft.Json;
+using System.Collections;
 using System.Collections.Generic;
+using UDGV.Utility;
+using UnityEditor;
 using UnityEngine;
 
 namespace UDGV.CacheSystem
 {
+    [System.Serializable]
     internal class DependencyCacheDataHandler
     {
+        [JsonProperty]
         private Dictionary<string, DependencyData> _data = new Dictionary<string, DependencyData>();
 
         public void Clear()
@@ -21,6 +26,11 @@ namespace UDGV.CacheSystem
         public bool TryGetValue(string key, out DependencyData dependencyData)
         {
             return _data.TryGetValue(key, out dependencyData);
+        }
+
+        public bool Contains(string key)
+        {
+            return _data.ContainsKey(key);
         }
 
         public void Add(string guid, DependencyData dependencyData)
